@@ -18,14 +18,14 @@
   @media (min-width:860px){.grid{grid-template-columns:1fr 1fr}}
   .card{background:#2f2c4f;border-radius:16px;padding:16px;box-shadow:0 0 14px rgba(120,115,245,.18)}
   .flag{font-size:13px;color:var(--accent2);font-weight:bold;margin-bottom:8px}
-  .cta-row{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0 6px}
+  .cta-row{display:flex;flex-direction:column;gap:8px;margin:10px 0}
   .btn{
     display:inline-block;padding:12px 18px;border-radius:26px;font-weight:bold;text-decoration:none;
     color:#121125;background:linear-gradient(90deg,var(--accent2),var(--accent3));
   }
   .btn.alt{background:linear-gradient(90deg,var(--accent1),#ffb300);color:#121125}
   .btn.ghost{background:#1a1830;border:1px solid #46436c;color:#fff}
-  .tiny{font-size:12px;color:var(--muted)}
+  .tiny{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.3}
   .steps{background:var(--card1);border-radius:14px;margin-top:16px}
   .steps h3{margin:0;padding:12px 14px;border-bottom:1px solid #2a274a;font-size:14px;color:var(--accent1)}
   .steps .cols{display:grid;gap:10px;padding:12px}
@@ -42,31 +42,33 @@
     <div class="hero">
       <span class="badge">VIP CLUB</span>
       <h1 class="title">VIP Day — Monthly on the 15th</h1>
-      <p class="sub">Subscribe to your local calendar. You’ll get <b>automatic updates</b> and <b>reminders</b> when we add or edit events.</p>
+      <p class="sub">Subscribe to your local calendar for <b>automatic updates</b> and <b>reminders</b> when we add or edit events.</p>
 
       <div class="grid">
         <!-- BRAZIL -->
         <div class="card">
           <div class="flag">🇧🇷 Brazil (America/São_Paulo)</div>
           <div class="cta-row">
-            <!-- Google: add by URL (encoded) -->
+            <!-- Google -->
             <a class="btn" target="_blank"
                href="https://calendar.google.com/calendar/u/0/r?cid=https%3A%2F%2Fricobetmarketing.github.io%2Fricobet-vipday-calendar%2Fbrazil-vipday.ics">
               📅 Add to Google (BR)
             </a>
-            <!-- HTTPS .ics for Apple/Outlook/Android -->
+            <div class="tiny">Best for Google Calendar <b>on desktop</b>. Mobile Google Calendar can’t add by link directly — use desktop to sync to your phone.</div>
+
+            <!-- Apple / Outlook -->
             <a class="btn alt" target="_blank"
                href="https://ricobetmarketing.github.io/ricobet-vipday-calendar/brazil-vipday.ics">
               🔔 Subscribe (Apple / Outlook)
             </a>
-            <!-- Copyable fallback -->
+            <div class="tiny">iPhone/iPad: Open in <b>Safari</b> for “Subscribe” popup. Outlook: Use “Subscribe from Web”. Updates in minutes.</div>
+
+            <!-- Direct -->
             <a class="btn ghost" target="_blank"
                href="https://ricobetmarketing.github.io/ricobet-vipday-calendar/brazil-vipday.ics">
               ⤓ Direct .ics Link
             </a>
-          </div>
-          <div class="tiny">
-            If “Subscribe” doesn’t open on iPhone, open this page in <b>Safari</b> and tap the yellow button again.
+            <div class="tiny">Copy this link into other calendar apps (e.g., ICSx⁵ for Android for fast updates).</div>
           </div>
         </div>
 
@@ -74,54 +76,57 @@
         <div class="card">
           <div class="flag">🇲🇽 Mexico (America/Mexico_City)</div>
           <div class="cta-row">
-            <!-- Google: add by URL (encoded) -->
+            <!-- Google -->
             <a class="btn" target="_blank"
                href="https://calendar.google.com/calendar/u/0/r?cid=https%3A%2F%2Fricobetmarketing.github.io%2Fricobet-vipday-calendar%2Fmexico-vipday.ics">
               📅 Add to Google (MX)
             </a>
-            <!-- HTTPS .ics for Apple/Outlook/Android -->
+            <div class="tiny">Best for Google Calendar <b>on desktop</b>. Mobile Google Calendar can’t add by link directly — use desktop to sync to your phone.</div>
+
+            <!-- Apple / Outlook -->
             <a class="btn alt" target="_blank"
                href="https://ricobetmarketing.github.io/ricobet-vipday-calendar/mexico-vipday.ics">
               🔔 Subscribe (Apple / Outlook)
             </a>
-            <!-- Copyable fallback -->
+            <div class="tiny">iPhone/iPad: Open in <b>Safari</b> for “Subscribe” popup. Outlook: Use “Subscribe from Web”. Updates in minutes.</div>
+
+            <!-- Direct -->
             <a class="btn ghost" target="_blank"
                href="https://ricobetmarketing.github.io/ricobet-vipday-calendar/mexico-vipday.ics">
               ⤓ Direct .ics Link
             </a>
-          </div>
-          <div class="tiny">
-            If “Subscribe” doesn’t open on iPhone, open this page in <b>Safari</b> and tap the yellow button again.
+            <div class="tiny">Copy this link into other calendar apps (e.g., ICSx⁵ for Android for fast updates).</div>
           </div>
         </div>
       </div>
 
-      <!-- How-to section -->
+      <!-- How-to -->
       <div class="steps">
         <h3>How to subscribe (so updates & notifications work)</h3>
         <div class="cols">
           <div class="step">
             <b>Apple (iPhone / iPad / Mac)</b><br>
-            Tap the yellow “Subscribe” button → If prompted, choose “Subscribe” → Done.  
+            Tap the yellow “Subscribe” button in Safari → Accept → Done.  
             <span class="tiny">Settings ▸ Calendar ▸ Accounts ▸ Subscribed Calendars to manage.</span>
           </div>
           <div class="step">
-            <b>Google Calendar (Web)</b><br>
-            Click “Add to Google” → Calendar opens with the feed URL prefilled → Add calendar.  
-            <span class="tiny">Google refresh may take some time.</span>
+            <b>Google Calendar (Desktop)</b><br>
+            Click “Add to Google” → Calendar opens with the feed URL → Add calendar.  
+            <span class="tiny">Updates may take up to 24h.</span>
           </div>
           <div class="step">
-            <b>Outlook</b><br>
-            Outlook Web: Calendar ▸ Add calendar ▸ Subscribe from web ▸ Paste the HTTPS link ▸ Import.  
-            Desktop: File ▸ Account Settings ▸ Internet Calendars ▸ New ▸ Paste link.
+            <b>Outlook / Android apps</b><br>
+            Outlook Web: Calendar ▸ Add calendar ▸ Subscribe from web.  
+            Android: Use an app like ICSx⁵ to subscribe for near real-time updates.
           </div>
         </div>
         <p class="note">
-          You’re subscribing to a live feed. When we <b>add</b>, <b>change</b>, or <b>delete</b> events in the file, your calendar updates automatically.
-          Alerts are controlled by your calendar app and event alarms.
+          Subscribed calendars stay live — when we <b>add</b>, <b>change</b>, or <b>delete</b> events, your calendar updates automatically.
         </p>
       </div>
     </div>
   </div>
 </body>
 </html>
+
+
