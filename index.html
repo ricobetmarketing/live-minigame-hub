@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Mini Game Hub — Phaser + Vite</title>
+  <meta name="description" content="Whack-a-Mole, Spin the Wheel, Catch the Coins — Phaser + Vite starter." />
+  <style>
+    html,body{height:100%;margin:0;background:#090a16;color:#eef4ff;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+    #app{display:grid;place-items:center;height:100%}
+    .hud{position:fixed;inset:auto 12px 12px auto;background:rgba(0,0,0,.45);backdrop-filter:blur(8px);padding:8px 12px;border-radius:12px}
+    .btn{cursor:pointer;border:none;border-radius:12px;padding:10px 14px;font-weight:700}
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <div class="hud"><button id="claim" class="btn">Claim reward</button></div>
+  <!-- IMPORTANT: relative path (./) so dev and build both work -->
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
