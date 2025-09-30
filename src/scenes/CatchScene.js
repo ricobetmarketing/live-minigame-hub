@@ -1,4 +1,4 @@
-import Phaser from 'phaser'
+import Phaser from 'phaser' 
 
 export default class CatchScene extends Phaser.Scene {
   constructor(){ super('catch'); this.score=0; this.timeLeft=30 }
