@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Live — Lightning Roulette Pick</title>
+<style>
+  :root{--ink:#eaf2ff;--mut:#9fb0d9;--g1:#71e1ff;--g2:#25c3ff}
+  *{box-sizing:border-box} html,body{height:100%}
+  body{margin:0;color:var(--ink);background:radial-gradient(1200px 800px at 70% -10%,#18244d 0%,#0a0f1e 55%,#05070d 100%);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial;display:flex;align-items:center;justify-content:center;padding:18px}
+  a.back{position:fixed;left:12px;top:12px;z-index:10;text-decoration:none;background:rgba(0,0,0,.5);padding:8px 12px;border-radius:10px;color:#fff;font-weight:700}
+  .wrap{width:min(1000px,96vw)}
+  .card{position:relative;border-radius:22px;padding:18px;background:linear-gradient(180deg,#1b2a56,#0f1832);outline:1px solid rgba(255,255,255,.08);box-shadow:0 16px 60px rgba(0,0,0,.55)}
+  h1{margin:0 0 8px;font-size:20px;font-weight:900;text-transform:uppercase}
+  p.sub{margin:0 6px 16px;color:var(--mut)}
+
+  .layout{display:grid;gap:16px;grid-template-columns:1fr;justify-items:center}
+  .pickGrid{display:grid;grid-template-columns:repeat(10, minmax(34px,1fr));gap:6px;width:min(520px,92%);justify-items:center}
+  .num{width:100%;padding:8px 0;border-radius:8px;text-align:center;font-weight:900;cursor:pointer;outline:1px solid rgba(255,255,255,.08)}
+  .num.red{background:#7a1a28} .num.black{background:#1a1a1a} .num.zero{background:#0b5c3b}
+  .num.sel{outline:2px solid rgba(113,225,255,.9);box-shadow:0 0 16px rgba(113,225,255,.5)}
+  .legend{font-size:12px;color:#9fb0d9}
+
+  .wheelWrap{position:relative;width:min(520px,86vw);aspect-ratio:1/1}
+  .wheel{position:absolute;inset:0;border-radius:50%;display:grid;place-items:center;background:radial-gradient(closest-side,#0e1633,#0a122a 65%,#060b1c 100%);box-shadow:inset 0 0 60px rgba(0,0,0,.6), 0 0 60px rgba(113,225,255,.18), 0 0 80px rgba(192,107,255,.16);overflow:hidden}
+  .slices{position:absolute;inset:10px;border-radius:50%}
+  .slice{position:absolute;left:50%;top:50%;transform-origin:0% 0%;width:50%;height:50%;clip-path:polygon(0 0,100% 0,0 100%);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+  .label{transform:translate(-60%,-20%) rotate(45deg);width:60px;line-height:1.1;text-align:center}
+  .pin{position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-bottom:18px solid #ffea9a;filter:drop-shadow(0 0 10px rgba(255,220,120,.9))}
+
+  .lightBar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .bolt{padding:6px 10px;border-radius:10px;background:rgba(255,230,140,.1);outline:1px solid rgba(255,230,140,.35);font-weight:900}
+  .flash{animation:flash 0.6s ease-in-out infinite alternate}
+  @keyframes flash{from{box-shadow:0 0 10px rgba(255,230,140,.4)}to{box-shadow:0 0 26px rgba(255,230,140,.9)}}
+
+  .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .btn{border:0;border-radius:12px;padding:10px 14px;font-weight:900;cursor:pointer;background:linear-gradient(to right,var(--g1),var(--g2));color:#061018;box-shadow:0 0 18px rgba(113,225,255,.5), inset 0 -3px 0 rgba(0,0,0,.35)}
+  .btn:disabled{opacity:.55}
+
+  .code{display:none;margin-top:10px;text-align:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.5px;padding:10px 12px;border-radius:12px;background:#0a0d1a;outline:1px dashed rgba(160,220,255,.35)}
+  .copy{display:none;margin-top:8px;border:0;border-radius:10px;padding:8px 10px;font-weight:900;background:#2b2b2b;color:#fff}
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Back</a>
+  <div class="wrap">
+    <div class="card">
+      <h1>Lightning Roulette Pick</h1>
+      <p class="sub">Pick one number (0–36). Lightning numbers strike before spin. Exact hit wins; lightning hit pays premium voucher. Spinning locks you to <b>Live</b>.</p>
+
+      <div class="layout">
+        <div class="pickGrid" id="pickGrid"></div>
+        <div class="legend">Tap to choose exactly one number.</div>
+
+        <div class="lightBar" id="lightBar"></div>
+
+        <div class="wheelWrap">
+          <div class="pin"></div>
+          <div class="wheel">
+            <div class="slices" id="slices"></div>
+          </div>
+        </div>
+
+        <div class="row">
+          <button class="btn" id="spinBtn" disabled>Spin</button>
+        </div>
+
+        <div class="code" id="codeBox">LIVE-LIGHT-XXXX</div>
+        <button class="copy" id="copyBtn">Copy Code</button>
+      </div>
+    </div>
+  </div>
+
+<script src="assets/common.js"></script>
+<script>
+const CLAIM_KEY='live_lightning_claimed_v1', CODE_STD='LIVE-LIGHT-WIN', CODE_XL='LIVE-LIGHT-XL';
+const prior=localStorage.getItem(CLAIM_KEY); if(prior){ finalize(JSON.parse(prior).code||CODE_STD); }
+const cc=getChoice(); if(cc && cc!=='live'){ alert('You already started Slot. Live is locked for this event.'); location.replace('index.html'); }
+
+/* Build number grid 0..36 */
+const pickGrid=document.getElementById('pickGrid');
+const reds=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+let selected=null, spun=false;
+for(let n=0;n<=36;n++){
+  const b=document.createElement('button'); b.className='num ' + (n===0?'zero':(reds.has(n)?'red':'black')); b.textContent=n;
+  b.addEventListener('click',()=>{
+    if(spun) return;
+    selected=n;
+    [...pickGrid.children].forEach(x=>x.classList.remove('sel'));
+    b.classList.add('sel');
+    spinBtn.disabled=false;
+  });
+  pickGrid.appendChild(b);
+}
+
+/* Wheel slices (simple 0..36 order for visuals) */
+const slices=document.getElementById('slices'); const N=37;
+for(let i=0;i<N;i++){
+  const deg=(360/N)*i;
+  const el=document.createElement('div');
+  el.className='slice';
+  el.style.transform=`translate(-50%,-50%) rotate(${deg}deg)`;
+  const col = i===0?'#0b5c3b' : (reds.has(i)?'#7a1a28':'#1a1a1a');
+  el.style.background = `linear-gradient(180deg, ${col}, #101010)`;
+  el.innerHTML=`<div class="label">${i}</div>`;
+  slices.appendChild(el);
+}
+
+/* Lightning picks */
+const lightBar=document.getElementById('lightBar');
+let lightning=[];
+function chooseLightning(){
+  const how=2+((Math.random()*2)|0); // 2–3
+  const picks=new Set();
+  while(picks.size<how){ picks.add((Math.random()*37)|0); }
+  const mults=[50,100,200,150,300];
+  lightning=[...picks].map(n=>({n, x: mults[(Math.random()*mults.length)|0]}));
+  lightBar.innerHTML='';
+  lightning.forEach(L=>{
+    const tag=document.createElement('div'); tag.className='bolt flash'; tag.textContent=`⚡ ${L.n} ×${L.x}`;
+    lightBar.appendChild(tag);
+  });
+}
+
+/* Spin */
+const spinBtn=document.getElementById('spinBtn'), codeBox=document.getElementById('codeBox'), copyBtn=document.getElementById('copyBtn');
+const priorClaim=localStorage.getItem(CLAIM_KEY); if(priorClaim){ spinBtn.disabled=true; }
+function spin(){
+  if(selected===null || spun) return;
+  setChoice('live');
+  spun=true; spinBtn.disabled=true;
+
+  chooseLightning(); // show lightning before spin
+
+  const winIdx=(Math.random()*37)|0; // winning number
+  const targetDeg = 360 - (360/N)*winIdx - (360/(N*2));
+  const turns = 6;
+  const total = turns*360 + targetDeg;
+
+  const start=performance.now(), dur=4200;
+  function anim(t){
+    const p=Math.min(1,(t-start)/dur), e=1-Math.pow(1-p,3);
+    slices.style.transform=`rotate(${e*total}deg)`;
+    if(p<1) requestAnimationFrame(anim);
+    else{
+      const lightningHit = lightning.some(l=>l.n===winIdx);
+      const win = (selected===winIdx);
+      let code='TRY-AGAIN-NEXT-TIME';
+      if(win && lightningHit) code=CODE_XL;
+      else if(win) code=CODE_STD;
+      codeBox.style.display='block'; codeBox.textContent = code;
+      if(win){ copyBtn.style.display='inline-block'; localStorage.setItem(CLAIM_KEY, JSON.stringify({code, ts:Date.now(), n:selected, winIdx, lightning})); }
+    }
+  }
+  requestAnimationFrame(anim);
+}
+spinBtn.addEventListener('click', spin);
+
+function finalize(code){
+  codeBox.style.display='block'; codeBox.textContent=code; copyBtn.style.display='inline-block'; spinBtn.disabled=true; spun=true;
+}
+copyBtn.addEventListener('click',()=>{ const t=codeBox.textContent.trim(); if(!t)return; navigator.clipboard.writeText(t).then(()=>{ copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy Code',1200);});});
+</script>
+</body>
+</html>
