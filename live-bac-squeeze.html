@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>Live — Baccarat Squeeze (Lite, 6D)</title>
+<title>Live — Baccarat Squeeze (Lite, 6D • Third-Card Rules)</title>
 <style>
   :root{
     --ink:#eaf2ff; --mut:#9fb0d9; --g1:#71e1ff; --g2:#25c3ff;
@@ -12,8 +12,7 @@
   *{box-sizing:border-box} html,body{height:100%}
   body{
     margin:0; color:var(--ink);
-    background:
-      radial-gradient(1400px 900px at 70% -10%, #18244d 0%, #0a0f1e 55%, #05070d 100%);
+    background:radial-gradient(1400px 900px at 70% -10%, #18244d 0%, #0a0f1e 55%, #05070d 100%);
     font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial;
     display:flex; align-items:center; justify-content:center; padding:18px;
   }
@@ -23,14 +22,12 @@
   }
   .wrap{ width:min(1000px,96vw) }
   .card{
-    position:relative; border-radius:22px; padding:18px;
+    position:relative; border-radius:22px; padding:18px; overflow:visible;
     background:linear-gradient(180deg,#1b2a56,#0f1832);
     outline:1px solid rgba(255,255,255,.08);
     box-shadow:0 16px 60px rgba(0,0,0,.55);
-    overflow:visible;
   }
   .card::before{
-    /* Big neon halo behind the table for 6D depth */
     content:""; position:absolute; inset:-10% -8% -16% -8%; z-index:-1;
     background:
       radial-gradient(closest-side at 50% 10%, var(--haloA), transparent 70%),
@@ -39,31 +36,21 @@
     filter: blur(24px);
   }
   .card::after{
-    /* Moving spotlight sweep */
     content:""; position:absolute; inset:-8% -6% -14% -6%; z-index:-1;
     background: radial-gradient(120% 100% at var(--sx,40%) var(--sy,10%),
                 rgba(255,255,255,.12), rgba(255,255,255,0) 60%);
     filter: blur(10px); mix-blend-mode:screen; animation: sweep 8s ease-in-out infinite;
   }
-  @keyframes sweep{
-    0% { --sx:35%; --sy:12%; opacity:.45 }
-    50%{ --sx:65%; --sy:18%; opacity:.9 }
-    100%{ --sx:35%; --sy:12%; opacity:.45 }
-  }
+  @keyframes sweep{ 0%{--sx:35%;--sy:12%;opacity:.45}50%{--sx:65%;--sy:18%;opacity:.9}100%{--sx:35%;--sy:12%;opacity:.45} }
 
   h1{margin:0 0 8px; font-size:22px; font-weight:900; text-transform:uppercase}
   p.sub{margin:0 6px 16px; color:var(--mut)}
 
   .felt{
-    position:relative; border-radius:18px;
+    position:relative; border-radius:18px; padding:14px; perspective:1400px;
     background:radial-gradient(closest-side,#13325f,#0e1f43);
     outline:1px solid rgba(255,255,255,.08);
-    box-shadow:
-      inset 0 0 60px rgba(0,0,0,.6),
-      0 0 60px rgba(113,225,255,.18),
-      0 0 80px rgba(192,107,255,.16);
-    padding:14px;
-    perspective:1400px;
+    box-shadow:inset 0 0 60px rgba(0,0,0,.6), 0 0 60px rgba(113,225,255,.18), 0 0 80px rgba(192,107,255,.16);
   }
   #fx{ position:absolute; inset:0; pointer-events:none; }
 
@@ -77,11 +64,7 @@
   .btn:disabled{ opacity:.6; pointer-events:none }
 
   .zone{display:grid; gap:10px; grid-template-columns:1fr 1fr; align-items:center}
-  .side{
-    border-radius:16px; background:rgba(0,0,0,.25); padding:12px;
-    outline:1px solid rgba(255,255,255,.08);
-    transform-style:preserve-3d;
-  }
+  .side{ border-radius:16px; background:rgba(0,0,0,.25); padding:12px; outline:1px solid rgba(255,255,255,.08); transform-style:preserve-3d; }
   .side h3{margin:0 0 6px; font-size:14px; display:flex; justify-content:space-between; align-items:center}
   .hand{display:flex; gap:12px; justify-content:center; min-height:126px}
 
@@ -103,19 +86,12 @@
     mix-blend-mode:screen;
   }
 
-  .deal-in{
-    opacity:0; transform:translateY(-30px) rotateX(12deg) scale(.96);
-    animation: deal .42s cubic-bezier(.2,.8,.2,1) forwards;
-  }
-  @keyframes deal{
-    to{ opacity:1; transform:translateY(0) rotateX(6deg) scale(1) }
-  }
+  .deal-in{ opacity:0; transform:translateY(-30px) rotateX(12deg) scale(.96); animation: deal .42s cubic-bezier(.2,.8,.2,1) forwards; }
+  @keyframes deal{ to{ opacity:1; transform:translateY(0) rotateX(6deg) scale(1) } }
 
   .face{ filter:blur(3px); transform:translateZ(2px) }
   .playing-card.show .face{ filter:none; transition:filter .18s ease }
-  .cover{ position:absolute; inset:0; pointer-events:none;
-    background:linear-gradient(180deg,rgba(10,16,30,.75),rgba(10,16,30,.55));
-  }
+  .cover{ position:absolute; inset:0; pointer-events:none; background:linear-gradient(180deg,rgba(10,16,30,.75),rgba(10,16,30,.55)); }
 
   .corners{ position:absolute; inset:0 }
   .corner{
@@ -139,9 +115,7 @@
     animation: pulse 1.2s ease-in-out infinite;
   }
   .playing-card.active .guide{ display:block }
-  @keyframes pulse{
-    0%{ opacity:.6 } 50%{ opacity:1 } 100%{ opacity:.6 }
-  }
+  @keyframes pulse{ 0%{opacity:.6} 50%{opacity:1} 100%{opacity:.6} }
 
   .code{
     display:none; margin-top:10px; text-align:center;
@@ -159,7 +133,7 @@
   <div class="wrap">
     <div class="card">
       <h1>Baccarat Squeeze (Lite)</h1>
-      <p class="sub">Bet first, then Deal. Squeeze cards in order (P1 → B1 → P2 → B2). Highest total (mod 10) wins. Your first bet locks you to <b>Live</b>.</p>
+      <p class="sub">Bet first, then Deal. Squeeze cards in order <b>(P1 → B1 → P2 → B2 → P3? → B3?)</b>. True third-card rules. Highest total (mod 10) wins.</p>
 
       <div class="felt">
         <canvas id="fx"></canvas>
@@ -182,7 +156,7 @@
         </div>
 
         <div class="score" id="result">Place your bet</div>
-        <div class="status" id="hint">Squeeze: tap 3 corners on the highlighted card to flip.</div>
+        <div class="status" id="hint">Squeeze the highlighted card: tap any 3 corners to flip.</div>
 
         <div class="code" id="codeBox">LIVE-BAC-XXXX</div>
         <button class="copy" id="copyBtn">Copy Code</button>
@@ -196,7 +170,7 @@
 <audio id="sWin"   src="https://cdn.jsdelivr.net/gh/naptha/tinyfiles@main/slot/win.mp3"   preload="auto"></audio>
 
 <script>
-/* ===== Fallback if assets/common.js is missing ===== */
+/* ------- Fallback if assets/common.js is missing ------- */
 if (typeof window.getChoice !== 'function') {
   window.getChoice = function(){ try { return localStorage.getItem('realm_choice'); } catch(e){ return null; } };
 }
@@ -204,22 +178,22 @@ if (typeof window.setChoice !== 'function') {
   window.setChoice = function(v){ try { localStorage.setItem('realm_choice', v); } catch(e){} };
 }
 
-/* ===== Config ===== */
+/* ------- Config ------- */
 const CLAIM_KEY='live_bac_squeeze_claimed_v1';
 const CODE_WIN='LIVE-BAC-WIN', CODE_LOSE='TRY-AGAIN-NEXT-TIME';
 
-/* ===== Realm lock gate ===== */
+/* ------- Realm lock gate ------- */
 const c=getChoice(); if(c && c!=='live'){ alert('You already started Slot. Live is locked for this event.'); location.replace('index.html'); }
 
-/* ===== Data helpers ===== */
+/* ------- Data helpers ------- */
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], suits=['♠','♥','♦','♣'];
 const rnd = a => a[(Math.random()*a.length)|0];
 const val = r => (r==='A'?1: (['10','J','Q','K'].includes(r)?0:Number(r)));
 
-/* ===== State + DOM ===== */
-let bet=null, dealt=false;  // chosen side + has been dealt
-let player=[], banker=[];   // arrays of cards {r,s,shown:false,peel:0, el:HTMLElement}
-let order=[], step=0;       // order of reveals and current step index
+/* ------- State + DOM ------- */
+let bet=null, dealt=false;
+let player=[], banker=[];
+let order=[], step=0, thirdProcessed=false;
 
 const betPlayer = document.getElementById('betPlayer');
 const betBanker = document.getElementById('betBanker');
@@ -233,12 +207,11 @@ const hintEl    = document.getElementById('hint');
 const codeBox   = document.getElementById('codeBox');
 const copyBtn   = document.getElementById('copyBtn');
 
-/* SFX */
 const sDeal = document.getElementById('sDeal');
 const sFlip = document.getElementById('sFlip');
 const sWin  = document.getElementById('sWin');
 
-/* Confetti FX canvas */
+/* Confetti FX */
 const fx = document.getElementById('fx'); const ctx = fx.getContext('2d');
 function resizeFX(){ fx.width = fx.parentElement.clientWidth; fx.height = fx.parentElement.clientHeight; }
 addEventListener('resize', resizeFX); addEventListener('orientationchange', ()=>setTimeout(resizeFX,200)); resizeFX();
@@ -252,23 +225,22 @@ function confetti(){
   })();
 }
 
-/* ===== Utility ===== */
+/* ------- Scores & UI ------- */
 function score(hand){ return hand.reduce((t,c)=>t+val(c.r),0)%10; }
+function twoScore(hand){ return (val(hand[0].r)+val(hand[1].r))%10; }
 function updateScores(){
   const ps = player.some(c=>c.shown) ? score(player) : '??';
   const bs = banker.some(c=>c.shown) ? score(banker) : '??';
   pScoreEl.textContent = ps; bScoreEl.textContent = bs;
 }
 function setActiveCard(cardObj){
-  // Disable all corners except this card's
   [...document.querySelectorAll('.playing-card')].forEach(el=>el.classList.remove('active'));
   if (!cardObj) return;
-  const el = cardObj.el;
-  el.classList.add('active');
+  cardObj.el.classList.add('active');
   hintEl.textContent = `Squeeze ${cardObj.side==='p'?'Player':'Banker'} card ${cardObj.idx+1}: tap any 3 corners`;
 }
 
-/* ===== Build a card element with peel logic ===== */
+/* ------- Build card element ------- */
 function makeCardEl(cardObj){
   const el=document.createElement('div');
   el.className='playing-card deal-in';
@@ -283,31 +255,26 @@ function makeCardEl(cardObj){
     </div>
     <div class="guide"></div>
   `;
-  // corner clickers
+  el.style.animationDelay = (cardObj.delay || 0)+'ms';
   el.querySelectorAll('.corner').forEach(btn=>{
     btn.addEventListener('click',()=>{
-      // only allow peeling if this is the currently active card
-      if (order[step] !== cardObj) return;
+      if (order[step] !== cardObj) return; // only current card can be peeled
       if(cardObj.shown) return;
       if(!btn.classList.contains('off')){
         btn.classList.add('off'); cardObj.peel++;
         if(cardObj.peel>=3){
-          // flip!
           cardObj.shown=true; el.classList.add('show');
           try{ sFlip.currentTime=0; sFlip.play().catch(()=>{}); }catch(e){}
           updateScores();
-          // move to next after a tiny beat
           setTimeout(nextStep, 220);
         }
       }
     });
   });
-  // slight per-card deal delay
-  el.style.animationDelay = (cardObj.delay || 0)+'ms';
   return el;
 }
 
-/* ===== Round flow ===== */
+/* ------- Bet / Deal ------- */
 function choose(side){
   if(bet) return;
   setChoice('live');
@@ -319,39 +286,96 @@ betPlayer.addEventListener('click', ()=>choose('player'));
 betBanker.addEventListener('click', ()=>choose('banker'));
 
 function deal(){
-  if(dealt) return; dealt=true;
+  if(dealt) return; dealt=true; thirdProcessed=false; order=[]; step=0;
   try{ sDeal.currentTime=0; sDeal.play().catch(()=>{}); }catch(e){}
-  // generate cards
+  // initial two each
   player = [ {r:rnd(ranks),s:rnd(suits),shown:false,peel:0,side:'p',idx:0,delay:80},
              {r:rnd(ranks),s:rnd(suits),shown:false,peel:0,side:'p',idx:1,delay:360} ];
   banker = [ {r:rnd(ranks),s:rnd(suits),shown:false,peel:0,side:'b',idx:0,delay:220},
              {r:rnd(ranks),s:rnd(suits),shown:false,peel:0,side:'b',idx:1,delay:500} ];
-
-  // Clear and render with animated deal-in
   pHand.innerHTML=''; bHand.innerHTML='';
   player.forEach(c=>{ c.el = makeCardEl(c); pHand.appendChild(c.el); });
   banker.forEach(c=>{ c.el = makeCardEl(c); bHand.appendChild(c.el); });
-
-  // guided reveal order (like classic squeeze pacing)
   order = [ player[0], banker[0], player[1], banker[1] ];
-  step = 0;
   updateScores();
   resultEl.textContent='Squeeze to reveal';
-  setTimeout(()=> setActiveCard(order[0]), 540); // let last card finish deal-in
+  setTimeout(()=> setActiveCard(order[0]), 540);
 }
 dealBtn.addEventListener('click', deal);
 
+/* ------- Third-card decision (true rules) ------- */
+function processThirdCards(){
+  // returns true if any third cards were added (so order extends), else false
+  const pTwo = twoScore(player);
+  const bTwo = twoScore(banker);
+
+  // Natural 8/9: no third card
+  if (pTwo>=8 || bTwo>=8) return false;
+
+  let playerDraws = (pTwo<=5);
+  let bankerDraws = false;
+  let p3=null, b3=null;
+
+  if (!playerDraws){
+    // Player stands (6/7): Banker draws ≤5 else stands
+    bankerDraws = (bTwo<=5);
+    if (bankerDraws){
+      b3 = {r:rnd(ranks), s:rnd(suits), shown:false, peel:0, side:'b', idx:2, delay:140};
+    }
+  } else {
+    // Player draws third card
+    p3 = {r:rnd(ranks), s:rnd(suits), shown:false, peel:0, side:'p', idx:2, delay:120};
+    const pv = val(p3.r); // 0–9 (10/J/Q/K=0)
+    // Banker rules when Player draws:
+    if (bTwo<=2) bankerDraws = true;
+    else if (bTwo===3) bankerDraws = (pv!==8);
+    else if (bTwo===4) bankerDraws = (pv>=2 && pv<=7);
+    else if (bTwo===5) bankerDraws = (pv>=4 && pv<=7);
+    else if (bTwo===6) bankerDraws = (pv===6 || pv===7);
+    else bankerDraws = false;
+
+    if (bankerDraws){
+      b3 = {r:rnd(ranks), s:rnd(suits), shown:false, peel:0, side:'b', idx:2, delay:220};
+    }
+  }
+
+  // Render + append to reveal order in baccarat sequence
+  let added = false;
+  if (p3){
+    p3.el = makeCardEl(p3); pHand.appendChild(p3.el);
+    order.push(p3); added = true;
+  }
+  if (b3){
+    b3.el = makeCardEl(b3); bHand.appendChild(b3.el);
+    order.push(b3); added = true;
+  }
+  if (added){ try{ sDeal.currentTime=0; sDeal.play().catch(()=>{}); }catch(e){} }
+  return added;
+}
+
+/* ------- Reveal engine ------- */
 function nextStep(){
   step++;
   if(step < order.length){
     setActiveCard(order[step]);
   }else{
-    // all revealed
+    // finished current queue
+    if(!thirdProcessed){
+      thirdProcessed = true;
+      const added = processThirdCards();
+      if (added){
+        // continue with newly added third cards
+        setTimeout(()=> setActiveCard(order[step]), 250);
+        return;
+      }
+    }
+    // no more cards => finish
     setActiveCard(null);
     finishRound();
   }
 }
 
+/* ------- Finish / Result ------- */
 function finishRound(){
   const ps=score(player), bs=score(banker);
   let winner = ps>bs ? 'player' : bs>ps ? 'banker' : 'tie';
@@ -373,19 +397,18 @@ function finishRound(){
   }
 }
 
-/* ===== Prior claim check (auto-finalize) ===== */
+/* ------- Prior claim (auto-finalize) ------- */
 try{
   const prior=localStorage.getItem(CLAIM_KEY);
   if(prior){
-    codeBox.style.display='block';
-    codeBox.textContent = JSON.parse(prior).code || CODE_WIN;
-    copyBtn.style.display='inline-block';
+    const code=(JSON.parse(prior).code)||CODE_WIN;
+    codeBox.style.display='block'; codeBox.textContent = code; copyBtn.style.display='inline-block';
     betPlayer.disabled=true; betBanker.disabled=true; dealBtn.disabled=true;
     resultEl.textContent='Voucher already claimed';
   }
 }catch(e){}
 
-/* ===== Copy code ===== */
+/* ------- Copy code ------- */
 copyBtn.addEventListener('click',()=>{
   const t=codeBox.textContent.trim(); if(!t) return;
   navigator.clipboard.writeText(t).then(()=>{
