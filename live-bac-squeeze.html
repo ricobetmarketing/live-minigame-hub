@@ -71,6 +71,15 @@
 
 <script src="assets/common.js"></script>
 <script>
+
+  /* Fallback in case assets/common.js is missing */
+if (typeof window.getChoice !== 'function') {
+  window.getChoice = function(){ try { return localStorage.getItem('realm_choice'); } catch(e){ return null; } };
+}
+if (typeof window.setChoice !== 'function') {
+  window.setChoice = function(v){ try { localStorage.setItem('realm_choice', v); } catch(e){} };
+}
+  
 const CLAIM_KEY='live_bac_squeeze_claimed_v1';
 const CODE_WIN='LIVE-BAC-WIN', CODE_LOSE='TRY-AGAIN-NEXT-TIME';
 const prior=localStorage.getItem(CLAIM_KEY); if(prior){ finalize(JSON.parse(prior).code||CODE_WIN); }
