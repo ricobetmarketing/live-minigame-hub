@@ -3,12 +3,13 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>Live — Baccarat (3 Bets • No Shoe)</title>
+<title>Live — Baccarat (3 Bets)</title>
 <style>
   :root{
     --ink:#eaf2ff; --mut:#9fb0d9; --g1:#71e1ff; --g2:#25c3ff; --gold:#ffd86a;
     --felt1:#184d57; --felt2:#0f2f35;
-    --cardW: clamp(62px, 9.2vw, 92px); --cardH: calc(var(--cardW) * 1.39);
+    --cardW: clamp(62px, 9.2vw, 92px);
+    --cardH: calc(var(--cardW) * 1.39);
   }
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -20,14 +21,14 @@
     -webkit-tap-highlight-color: transparent;
   }
   button{ touch-action:manipulation; }
-
   .wrap{ width:min(1100px,98vw) }
   .card{
     position:relative; border-radius:22px; padding:12px; overflow:visible;
     background:linear-gradient(180deg,#1b2a56,#0f1832);
     outline:1px solid rgba(255,255,255,.08); box-shadow:0 16px 60px rgba(0,0,0,.55);
   }
-  .top{ display:flex; gap:10px; align-items:center; justify-content:space-between; margin:2px 2px 8px }
+
+  .top{ display:flex; gap:10px; align-items:center; justify-content:space-between; margin:2px 2px 8px; flex-wrap:wrap }
   .note{font-size:12px; opacity:.9}
   .toggle,.reset{border:0;border-radius:12px;padding:8px 12px;font-weight:900;cursor:pointer;background:#2b2b2b;color:#fff}
   .status{font-weight:800; background:rgba(0,0,0,.35); padding:6px 10px; border-radius:10px}
@@ -51,7 +52,7 @@
   .tot.p{ left:clamp(14px, 5vw, 60px) } .tot.b{ right:clamp(14px, 5vw, 60px) }
   .tot.pop{ transform:scale(1.18) }
 
-  /* CLICKABLE BET AREAS — topmost, nothing can cover them */
+  /* CLICKABLE BET AREAS — topmost */
   .areas{
     position:absolute; inset:clamp(100px,18vh,160px) clamp(12px,6vw,70px) clamp(150px,23vh,210px);
     display:grid; grid-template-columns:1fr 1fr 1fr; gap:clamp(10px,2.6vw,28px);
@@ -95,14 +96,21 @@
   .btn:disabled{opacity:.55}
   .banner{ position:absolute; right:10px; top:10px; background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:8px 12px; font-weight:900; z-index:12000; font-size:clamp(12px,1.8vw,14px) }
 
-  .winner{ position:absolute; inset:0; display:none; place-items:center; z-index:8; background:radial-gradient(100% 60% at 50% 0%, rgba(255,255,255,.08), rgba(0,0,0,.0) 60%) }
-  .winner.show{ display:grid; animation:fadeOut 2.1s ease forwards }
-  @keyframes fadeOut{ 0%{opacity:1} 85%{opacity:1} 100%{opacity:0} }
-  .winBadge{ padding:14px 22px; border-radius:18px; font:900 clamp(18px,3.8vw,32px)/1 ui-sans-serif; letter-spacing:1px; color:#061018; text-shadow:none; box-shadow:0 0 24px rgba(113,225,255,.6) }
+  .winner{ position:absolute; inset:0; display:none; place-items:center; z-index:8; pointer-events:none }
+  .winner.show{ display:grid; animation:fadeOut 2.2s ease forwards }
+  @keyframes fadeOut{ 0%{opacity:1} 75%{opacity:1} 100%{opacity:0} }
+  .winBadge{
+    padding:16px 26px; border-radius:18px; font:900 clamp(20px,4vw,34px)/1 ui-sans-serif;
+    letter-spacing:1px; color:#061018; text-shadow:none;
+    box-shadow:0 0 24px rgba(113,225,255,.6); transform:scale(.9);
+    animation:pop 600ms ease both;
+  }
+  @keyframes pop{ 0%{transform:scale(.8)} 60%{transform:scale(1.06)} 100%{transform:scale(1)} }
   .winBadge.player{ background:linear-gradient(90deg,#aaffef,#71f1d6)}
   .winBadge.banker{ background:linear-gradient(90deg,#ffc6cf,#ff9aa5)}
   .winBadge.tie{ background:linear-gradient(90deg,#fff0b5,#ffd86a)}
 
+  /* Confetti canvas sits under winner badge */
   .overlay{ position:fixed; inset:0; background:rgba(0,0,12,.86); display:none; place-items:center; z-index:13000; backdrop-filter: blur(4px) }
   .overlay.show{ display:grid }
   .modal{
@@ -111,6 +119,7 @@
     outline:1px solid rgba(180,220,255,.25); box-shadow:0 24px 90px rgba(0,0,0,.75);
     transform:scale(.96); animation:popIn .28s ease forwards; color:#eaf2ff
   }
+  @keyframes popIn{to{transform:scale(1)}}
   .voucher{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:clamp(16px,3.8vw,20px); letter-spacing:.6px; padding:12px 14px; border-radius:12px; color:#d8b6ff; background:#0a0d1a; display:inline-block; outline:1px dashed rgba(160,220,255,.4); margin:10px 0 6px; }
   .row{display:flex; gap:10px; justify-content:center; margin-top:10px; flex-wrap:wrap}
   .copy,.close{cursor:pointer; border:0; border-radius:12px; padding:10px 14px; font-weight:900; font-size:clamp(13px,3.6vw,14px)}
@@ -150,13 +159,13 @@
 
         <!-- CLICKABLE AREAS -->
         <div class="areas" id="areas" role="group" aria-label="Betting areas">
-          <button type="button" class="area player" id="areaPlayer" data-side="player" aria-label="Bet Player" onclick="selectSide('player')">
+          <button type="button" class="area player" id="areaPlayer" data-side="player" aria-label="Bet Player">
             <h2>PLAYER</h2><small>1 : 1</small><div class="betSpot"></div>
           </button>
-          <button type="button" class="area tie" id="areaTie" data-side="tie" aria-label="Bet Tie" onclick="selectSide('tie')">
+          <button type="button" class="area tie" id="areaTie" data-side="tie" aria-label="Bet Tie">
             <h2>TIE</h2><small>8 : 1</small><div class="betSpot"></div>
           </button>
-          <button type="button" class="area banker" id="areaBanker" data-side="banker" aria-label="Bet Banker" onclick="selectSide('banker')">
+          <button type="button" class="area banker" id="areaBanker" data-side="banker" aria-label="Bet Banker">
             <h2>BANKER</h2><small>0.95 : 1</small><div class="betSpot"></div>
           </button>
         </div>
@@ -168,7 +177,7 @@
 
         <div class="banner" id="banner">Tap Player / Tie / Banker</div>
 
-        <div class="winner" id="winnerOverlay"><div class="winBadge" id="winBadge">PLAYER WIN</div></div>
+        <div class="winner" id="winnerOverlay"><div class="winBadge" id="winBadge">You Win</div></div>
       </div>
     </div>
   </div>
@@ -193,16 +202,16 @@
 <audio id="sClick"   preload="auto" src="https://cdn.jsdelivr.net/gh/naptha/tinyfiles@main/click/click2.mp3"></audio>
 
 <script>
-/*** Minimal logic — no shoe, 3 bets only ***/
+/*** Minimal 3-bet Baccarat with sequential flips, winner badge, sounds ***/
 function g(id){return document.getElementById(id)}
 function delay(ms){return new Promise(r=>setTimeout(r,ms))}
 
 /* URL reset for testing */
 const p=new URLSearchParams(location.search);
-if(p.get('reset')==='1'){ try{ localStorage.removeItem('live_3bets_claimed_v1'); localStorage.removeItem('live_3bets_progress_v1'); }catch(e){} }
+if(p.get('reset')==='1'){ try{ localStorage.removeItem('live_3bets_claimed_v2'); localStorage.removeItem('live_3bets_progress_v2'); }catch(e){} }
 
-/* Keys */
-const CLAIM_KEY='live_3bets_claimed_v1', PROG_KEY='live_3bets_progress_v1';
+/* Keys and limits */
+const CLAIM_KEY='live_3bets_claimed_v2', PROG_KEY='live_3bets_progress_v2';
 const MAX_ROUNDS=3, CODE_WIN='VIPBAW', CODE_LOSE='VIPBAL';
 
 /* Audio */
@@ -213,24 +222,25 @@ function playS(a){ if(!soundOn || !audioUnlocked) return; try{ a.currentTime=0; 
 g('soundBtn').addEventListener('click',e=>{ soundOn=!soundOn; e.target.textContent=soundOn?'🔊 Sound: On':'🔈 Sound: Off'; unlockAudio(); });
 ['pointerdown','touchstart','mousedown'].forEach(ev=>document.addEventListener(ev, unlockAudio, {once:true, passive:true}));
 
-/* Confetti (simple) */
+/* Confetti */
 const fx=g('fx'), ctx=fx.getContext('2d');
 function resizeFX(){ fx.width=fx.parentElement.clientWidth; fx.height=fx.parentElement.clientHeight }
 addEventListener('resize',resizeFX); addEventListener('orientationchange',()=>setTimeout(resizeFX,200)); resizeFX();
-function confetti(){ const p=[]; for(let i=0;i<140;i++) p.push({x:fx.width/2,y:120+Math.random()*20,vx:(Math.random()-0.5)*6,vy:(Math.random()-0.5)*5,life:120+Math.random()*60,r:2+Math.random()*3,h:Math.random()*360}); (function loop(){ ctx.clearRect(0,0,fx.width,fx.height); p.forEach(o=>{o.x+=o.vx;o.y+=o.vy;o.vy+=0.06;o.life--;ctx.globalAlpha=Math.max(0,o.life/180);ctx.fillStyle=`hsl(${o.h},100%,60%)`;ctx.fillRect(o.x,o.y,o.r,o.r);}); ctx.globalAlpha=1; if(p.some(o=>o.life>0)) requestAnimationFrame(loop); })(); }
+function confetti(){ const p=[]; for(let i=0;i<160;i++) p.push({x:fx.width/2,y:120+Math.random()*20,vx:(Math.random()-0.5)*6,vy:(Math.random()-0.5)*5,life:140+Math.random()*60,r:2+Math.random()*3,h:Math.random()*360}); (function loop(){ ctx.clearRect(0,0,fx.width,fx.height); p.forEach(o=>{o.x+=o.vx;o.y+=o.vy;o.vy+=0.06;o.life--;ctx.globalAlpha=Math.max(0,o.life/200);ctx.fillStyle=`hsl(${o.h},100%,60%)`;ctx.fillRect(o.x,o.y,o.r,o.r);}); ctx.globalAlpha=1; if(p.some(o=>o.life>0)) requestAnimationFrame(loop); })(); }
 
-/* DOM */
-const banner=g('banner'), status=g('status');
+/* DOM refs */
+const status=g('status'), banner=g('banner');
 const pHand=g('pHand'), bHand=g('bHand'), pTot=g('pTot'), bTot=g('bTot');
 const areas=g('areas'), btnP=g('areaPlayer'), btnT=g('areaTie'), btnB=g('areaBanker');
 const dealBtn=g('dealBtn'), progress=g('progress');
 const winnerOverlay=g('winnerOverlay'), winBadge=g('winBadge');
 const voucherOverlay=g('voucherOverlay'), voucherText=g('voucherText'), voucherHeader=g('voucherHeader'), copyBtn=g('copyBtn'), closeBtn=g('closeBtn');
+g('resetBtn').addEventListener('click',()=>{ try{ localStorage.removeItem(CLAIM_KEY); localStorage.removeItem(PROG_KEY);}catch(e){} location.reload(); });
 
 /* State */
 let roundsPlayed=0, winsCount=0, selection=null, inRound=false;
 
-/* If already claimed, show modal and stop */
+/* Resume / claimed */
 const claimed=localStorage.getItem(CLAIM_KEY);
 if(claimed){
   const c=JSON.parse(claimed||'{}'); voucherText.textContent=c.code||CODE_LOSE;
@@ -241,116 +251,119 @@ if(claimed){
   lock(true);
   status.textContent='Already claimed on this device. Use Reset or ?reset=1 for testing.';
 }
-
-/* Resume progress if not claimed */
 try{
   const prog=JSON.parse(localStorage.getItem(PROG_KEY) || 'null');
   if(prog && !claimed){ roundsPlayed=Math.min(MAX_ROUNDS, prog.roundsPlayed||0); winsCount=Math.max(0, prog.winsCount||0) }
 }catch(e){}
 updateHud();
 
-/* Simple RNG deck for values only */
-const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+/* Card helpers */
+const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const SUITS=['♠','♥','♦','♣'];
 function bacVal(r){ if(r==='A')return 1; if(r==='10'||r==='J'||r==='Q'||r==='K') return 0; return +r }
-function draw(){ const r=ranks[(Math.random()*ranks.length)|0]; const suits=['♠','♥','♦','♣']; const s=suits[(Math.random()*4)|0]; return {r,s} }
 function total(hand){ return hand.reduce((t,c)=>t+bacVal(c.r),0)%10 }
-
-function makeCardEl(c, show=false){
+function newCard(){ const r=RANKS[(Math.random()*RANKS.length)|0]; const s=SUITS[(Math.random()*4)|0]; return {r,s,shown:false,el:null} }
+function makeCardEl(card, show=false){
   const el=document.createElement('div'); el.className='playing-card deal-in'+(show?' reveal':'');
-  el.innerHTML=`<div class="card3d"><div class="sideFace back">🂠</div><div class="sideFace front">${c.r}${c.s}</div></div>`;
-  c.el=el; c.shown=!!show; return el;
+  el.innerHTML=`<div class="card3d"><div class="sideFace back">🂠</div><div class="sideFace front">${card.r}${card.s}</div></div>`;
+  card.el=el; card.shown=!!show; return card;
 }
-function flip(card){ if(card.shown) return; card.shown=true; card.el.classList.add('reveal'); playS(g('sFlip')); }
+function flip(card){ if(card.shown) return; card.shown=true; if(card.el) card.el.classList.add('reveal'); playS(sFlip); }
 
+/* Selection */
 function lock(disabled){
   [btnP,btnT,btnB].forEach(b=>{ b.disabled=!!disabled; if(disabled) b.classList.remove('sel') });
   dealBtn.disabled = !!disabled;
   if(disabled) selection=null;
 }
-
-/* Selection — attach both inline onclick (already set) and listeners for safety */
 function selectSide(side){
   if(inRound) return;
   [btnP,btnT,btnB].forEach(b=>b.classList.remove('sel'));
-  const map={player:btnP,tie:btnT,banker:btnB}, btn=map[side];
+  const map={player:btnP, tie:btnT, banker:btnB}, btn=map[side];
   if(!btn || btn.disabled) return;
   btn.classList.add('sel'); selection=side; dealBtn.disabled=false;
   banner.textContent=`Selected: ${side.toUpperCase()} • Tap DEAL`;
   status.textContent=`Selected: ${side}`;
-  unlockAudio(); playS(sClick);
+  playS(sClick);
 }
 areas.addEventListener('pointerup', e=>{ const t=e.target.closest?.('.area'); if(t && !t.disabled) selectSide(t.dataset.side) }, {passive:true});
 areas.addEventListener('click', e=>{ const t=e.target.closest?.('.area'); if(t && !t.disabled) selectSide(t.dataset.side) });
 
+/* Round flow (sequential flips) */
 dealBtn.addEventListener('click', startRound, {passive:true});
-g('resetBtn').addEventListener('click',()=>{ try{ localStorage.removeItem(CLAIM_KEY); localStorage.removeItem(PROG_KEY); }catch(e){} location.reload(); });
-
-/* Round flow */
 async function startRound(){
   if(inRound) return;
   if(!selection) return alert('Select Player / Tie / Banker first.');
   if(roundsPlayed>=MAX_ROUNDS) return;
   inRound=true; dealBtn.disabled=true; playS(sDeal);
 
-  // Deal 2 + 2, show/flip with tiny delays
+  // Prepare hands
   pHand.innerHTML=''; bHand.innerHTML='';
-  const P=[makeCardEl(draw(),false), makeCardEl(draw(),false)];
-  const B=[makeCardEl(draw(),false), makeCardEl(draw(),false)];
-  P.forEach(c=>pHand.appendChild(c)); B.forEach(c=>bHand.appendChild(c));
-  await delay(120); flip(P[0]); updateTotals(P,B);
-  await delay(200); flip(B[0]); updateTotals(P,B);
-  await delay(200); flip(P[1]); updateTotals(P,B);
-  await delay(200); flip(B[1]); updateTotals(P,B);
+  let P = [ makeCardEl(newCard(), false), makeCardEl(newCard(), false) ];
+  let B = [ makeCardEl(newCard(), false), makeCardEl(newCard(), false) ];
+  P.forEach(c=>pHand.appendChild(c.el)); B.forEach(c=>bHand.appendChild(c.el));
 
-  // Naturals?
+  // Sequential flips: P1, B1, P2, B2 (with UI ticks)
+  await delay(140); flip(P[0]); updateTotals(P,B);
+  await delay(320); flip(B[0]); updateTotals(P,B);
+  await delay(320); flip(P[1]); updateTotals(P,B);
+  await delay(320); flip(B[1]); updateTotals(P,B);
+
+  // Natural check
   if(total(P)>=8 || total(B)>=8){ await finishRound(P,B); return; }
 
-  // Player third card rule
+  // Player third card
   let playerThird=null;
-  if(total(P)<=5){ const c=makeCardEl(draw(),false); pHand.appendChild(c); await delay(180); flip(c); playerThird=c; updateTotals(P.concat(c),B); }
+  if(total(P)<=5){
+    playerThird = makeCardEl(newCard(), false);
+    pHand.appendChild(playerThird.el);
+    await delay(360); flip(playerThird); P.push(playerThird); updateTotals(P,B);
+  }
 
-  // Banker third card decision
-  const bT0=total(B); let needBanker=false;
+  // Banker third card (table)
+  const bT0=total(B);
+  let needBanker=false;
   if(!playerThird){ needBanker=bT0<=5; }
   else{
-    const v=bacVal(playerThird.innerText?.trim()?.split('')[0]||playerThird.r||'A'); // safe guard, though we stored card already
-    const pt = total(P.concat(playerThird));
-    // standard banker rule table:
-    const vv = bacVal(playerThird ? playerThird.children ? playerThird : {r:playerThird.r} : {r:'A'}.r);
-    const v2 = bacVal(playerThird ? playerThird.r : 'A');
-    const val=v2;
-    needBanker = (bT0<=2) || (bT0===3 && val!==8) || (bT0===4 && val>=2 && val<=7) || (bT0===5 && val>=4 && val<=7) || (bT0===6 && (val===6||val===7));
+    const v = bacVal(playerThird.r);
+    needBanker = (bT0<=2) || (bT0===3 && v!==8) || (bT0===4 && v>=2 && v<=7) || (bT0===5 && v>=4 && v<=7) || (bT0===6 && (v===6||v===7));
   }
-  if(needBanker){ const c=makeCardEl(draw(),false); bHand.appendChild(c); await delay(180); flip(c); updateTotals(P.concat(playerThird||[]),B.concat(c)); }
+  if(needBanker){
+    const b3 = makeCardEl(newCard(), false);
+    bHand.appendChild(b3.el);
+    await delay(360); flip(b3); B.push(b3); updateTotals(P,B);
+  }
 
   await finishRound(P,B);
 }
 
+/* Totals + micro-pop */
 function updateTotals(P=[],B=[]){
-  function t(h){ return h.length? h.reduce((t,c)=>t+bacVal(c.r||c.innerText||'A'),0)%10 : '—' }
-  pTot.textContent='Player: '+ (P.some(c=>c.shown)? t(P):'—');
-  bTot.textContent='Banker: '+ (B.some(c=>c.shown)? t(B):'—');
-  pTot.classList.add('pop'); bTot.classList.add('pop'); setTimeout(()=>{pTot.classList.remove('pop'); bTot.classList.remove('pop')}, 200);
+  const p = P.some(c=>c.shown) ? total(P) : '—';
+  const b = B.some(c=>c.shown) ? total(B) : '—';
+  pTot.textContent = 'Player: ' + p;
+  bTot.textContent = 'Banker: ' + b;
+  pTot.classList.add('pop'); bTot.classList.add('pop');
+  setTimeout(()=>{ pTot.classList.remove('pop'); bTot.classList.remove('pop'); }, 220);
 }
 
+/* Winner banner + effects */
 async function finishRound(P,B){
-  const pT = P.reduce((t,c)=>t+bacVal(c.r),0)%10;
-  const bT = B.reduce((t,c)=>t+bacVal(c.r),0)%10;
-  const winner = (pT>bT)?'player' : (bT>pT)?'banker':'tie';
-  const badgeTxt = winner==='tie' ? `TIE — ${pT}` : `${winner.toUpperCase()} WIN — ${winner==='player'?pT:bT}`;
-  showWinner(winner, badgeTxt);
+  const pT=total(P), bT=total(B);
+  let who = (pT>bT)?'player' : (bT>pT)?'banker':'tie';
+  let text = (who==='player') ? 'You Win' : (who==='banker') ? 'Dealer Win' : 'Tie';
+  showWinner(who, text);
+  if(who!=='tie' && selection===who) winsCount++;
 
-  if(selection===winner && winner!=='tie') winsCount++; // only count Player/Banker wins towards “any win”
   roundsPlayed++; saveProgress();
-
   const left = Math.max(0, MAX_ROUNDS - roundsPlayed);
   progress.textContent = `Bets left: ${left} • Wins: ${winsCount}`;
 
   if(roundsPlayed>=MAX_ROUNDS){
-    await delay(500);
+    await delay(700);
     finalizeVoucher((winsCount>0)?CODE_WIN:CODE_LOSE);
   }else{
-    banner.textContent = `Result: ${badgeTxt} • Select next bet (${left} left)`;
+    banner.textContent = `Result: ${text} • Select next bet (${left} left)`;
     selection=null; [btnP,btnT,btnB].forEach(b=>b.classList.remove('sel'));
     inRound=false; dealBtn.disabled=true;
   }
@@ -359,17 +372,21 @@ async function finishRound(P,B){
 function showWinner(winner, text){
   winBadge.textContent=text;
   winBadge.className='winBadge '+(winner==='player'?'player':winner==='banker'?'banker':'tie');
-  winnerOverlay.classList.remove('show'); void winnerOverlay.offsetWidth;
-  winnerOverlay.classList.add('show');
+  // Pulse the winning tile
   [btnP,btnT,btnB].forEach(b=>b.classList.remove('winPulse'));
   if(winner==='player') btnP.classList.add('winPulse');
   else if(winner==='banker') btnB.classList.add('winPulse');
   else btnT.classList.add('winPulse');
+  // Show badge + confetti + sound
+  winnerOverlay.classList.remove('show'); void winnerOverlay.offsetWidth;
+  winnerOverlay.classList.add('show');
+  if(winner==='player'){ confetti(); }
+  playS(sWin);
   banner.textContent=text;
 }
 
+/* Voucher */
 function finalizeVoucher(code){
-  playS(sWin); confetti();
   voucherText.textContent = code;
   voucherHeader.textContent = (code===CODE_WIN)
     ? "Write something to redeem your VIP Day rewards now!"
@@ -379,13 +396,12 @@ function finalizeVoucher(code){
   lock(true);
   inRound=false;
 }
-
-copyBtn.onclick=()=>{ const t=voucherText.textContent.trim(); if(!t) return; navigator.clipboard.writeText(t).then(()=>{ copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy Code',1000); }); };
+copyBtn.onclick=()=>{ const t=voucherText.textContent.trim(); if(!t) return; navigator.clipboard.writeText(t).then(()=>{ copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy Code',1200); }); };
 closeBtn.onclick=()=> voucherOverlay.classList.remove('show');
 
+/* HUD + persistence */
 function saveProgress(){ try{ localStorage.setItem(PROG_KEY, JSON.stringify({roundsPlayed,winsCount})); }catch(e){} }
 function updateHud(){ progress.textContent=`Bets left: ${Math.max(0, MAX_ROUNDS - roundsPlayed)} • Wins: ${winsCount}`; }
-
 function init(){ banner.textContent='Tap Player / Tie / Banker'; lock(false); }
 init();
 </script>
