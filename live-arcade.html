@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>Live Arcade — Five Mini Games (FX Edition)</title>
+<title>Live Arcade — Five Mini Games (Trails + Reels + Video)</title>
 <style>
   :root{
     --ink:#eaf2ff; --mut:#9fb0d9; --g1:#71e1ff; --g2:#25c3ff; --gold:#ffd86a; --warn:#ffb3be;
-    --card1:#142345; --card2:#0d1836; --line:rgba(255,255,255,.08); --line2:rgba(113,225,255,.35);
+    --card1:#142345; --card2:#0d1836; --line:rgba(255,255,255,.08);
   }
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -20,9 +20,18 @@
     display:flex; align-items:center; justify-content:center; padding:18px; overflow:hidden;
   }
 
-  /* --- Ambient particles canvas --- */
-  #fx-bg, #fx-confetti{position:fixed; inset:0; pointer-events:none; z-index:0}
-  #fx-confetti{mix-blend-mode:screen}
+  /* --- Ambient video (optional) --- */
+  #bg-video{
+    position:fixed; inset:0; width:100%; height:100%; object-fit:cover; z-index:-3; opacity:.28;
+    filter:saturate(1.2) contrast(1.05) blur(1px);
+    pointer-events:none;
+  }
+
+  /* --- Ambient particles + trails + confetti --- */
+  #fx-bg, #fx-trails, #fx-confetti{position:fixed; inset:0; pointer-events:none}
+  #fx-bg{z-index:-2}
+  #fx-trails{z-index:-1; mix-blend-mode:screen}
+  #fx-confetti{z-index:0; mix-blend-mode:screen}
 
   .wrap{position:relative; z-index:1; width:min(1100px,96vw);}
 
@@ -63,23 +72,20 @@
   .card{
     position:relative; border-radius:22px; padding:18px; margin-top:12px;
     background:linear-gradient(180deg,var(--card1),var(--card2));
-    outline:1px solid var(--line); box-shadow:0 16px 60px rgba(0,0,0,.55)
+    outline:1px solid var(--line); box-shadow:0 16px 60px rgba(0,0,0,.55);
+    animation:fadeUp .36s ease both
   }
-  .card::before{
-    content:""; position:absolute; inset:-2px; border-radius:24px; padding:2px; pointer-events:none;
-    background:linear-gradient(45deg, rgba(113,225,255,.2), rgba(192,107,255,.15));
-    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite:xor; mask-composite:exclude; opacity:.6
-  }
-
-  .game{ display:none; animation:fadeUp .36s ease both } .game.active{ display:block }
   @keyframes fadeUp{ from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none} }
+  .game{ display:none } .game.active{ display:block }
 
   /* Shared UI */
   .row.center{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap }
-  .code{ display:none; margin-top:10px; text-align:center;
-         font-family:ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.5px;
-         padding:10px 12px; border-radius:12px; background:#0a0d1a; outline:1px dashed rgba(160,220,255,.35) }
+  .code{
+    display:none; margin-top:10px; text-align:center;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.5px;
+    padding:10px 12px; border-radius:12px; background:#0a0d1a; outline:1px dashed rgba(160,220,255,.35);
+    min-height:38px;
+  }
   .copy{ display:none; margin-top:8px; border:0; border-radius:10px; padding:8px 10px; font-weight:900; background:#2b2b2b; color:#fff }
 
   /* ---------- Lightning Roulette ---------- */
@@ -107,11 +113,7 @@
   /* ---------- Blackjack ---------- */
   .bj-table{border-radius:18px;background:radial-gradient(closest-side,#13325f,#0e1f43);outline:1px solid var(--line);box-shadow:inset 0 0 60px rgba(0,0,0,.6);padding:16px}
   .bj-hand{display:flex;gap:8px;min-height:100px;justify-content:center;align-items:center;margin:8px 0}
-  .bj-card{
-    width:64px;height:90px;border-radius:10px;background:radial-gradient(180px 120px at 50% -20%,#fff,#e9eefc 40%,#c8d4f3 100%);
-    outline:2px solid #e5ecff;box-shadow:0 10px 24px rgba(0,0,0,.35);display:grid;place-items:center;font-weight:900;color:#1a2050;
-    transform-style:preserve-3d; transition:transform .38s ease;
-  }
+  .bj-card{width:64px;height:90px;border-radius:10px;background:radial-gradient(180px 120px at 50% -20%,#fff,#e9eefc 40%,#c8d4f3 100%);outline:2px solid #e5ecff;box-shadow:0 10px 24px rgba(0,0,0,.35);display:grid;place-items:center;font-weight:900;color:#1a2050;transform-style:preserve-3d; transition:transform .38s ease;}
   .bj-down{background:linear-gradient(180deg,#0e1a3a,#0a1329);outline:1px solid var(--line)}
   .bj-card.flip{transform:rotateY(180deg)}
   .bj-score{color:var(--gold);font-weight:900;text-shadow:0 0 10px rgba(255,216,106,.6);margin:4px 0;text-align:center}
@@ -132,7 +134,6 @@
   .cr-die{width:64px;height:64px;background:#fff;border-radius:10px;display:grid;place-items:center;color:#111;font-weight:900;box-shadow:0 8px 20px rgba(0,0,0,.35); transition:transform .2s}
   .shake{animation:shake .4s ease}
   @keyframes shake{10%{transform:translate(-2px,-2px) rotate(-3deg)} 30%{transform:translate(3px,2px) rotate(3deg)} 50%{transform:translate(-3px,1px) rotate(-2deg)} 70%{transform:translate(2px,-1px) rotate(2deg)} 100%{transform:none}}
-
   .cr-status{color:var(--gold);font-weight:900;text-shadow:0 0 10px rgba(255,216,106,.6);margin-top:6px}
 
   /* ---------- Baccarat Squeeze ---------- */
@@ -154,19 +155,24 @@
   .bc-score{text-align:center;color:var(--gold);font-weight:900;text-shadow:0 0 10px rgba(255,216,106,.6);margin-top:6px}
   .bc-status{text-align:center;margin-top:10px;color:#9fb0d9}
 
-  /* Utility badges */
   .badge-win{color:#041a0f; background:#aef7c1; border-radius:999px; padding:.2em .6em; font-weight:900}
   .badge-lose{color:#2b0b11; background:#ffb3be; border-radius:999px; padding:.2em .6em; font-weight:900}
 </style>
 </head>
 <body>
+  <!-- Optional ambient background video (royalty-free blob). Replace src if you like. -->
+  <video id="bg-video" autoplay loop muted playsinline>
+    <source src="data:video/mp4;base64,AAAAIGZha2VfdmlkZW9fM3MyX3Nob3J0" type="video/mp4">
+  </video>
+
   <canvas id="fx-bg"></canvas>
+  <canvas id="fx-trails"></canvas>
   <canvas id="fx-confetti"></canvas>
 
   <div class="wrap">
     <header>
       <h1>Live Arcade</h1>
-      <p class="sub">Pick a game tab. Sounds are <b>opt-in</b>. Your first action locks you to <b>Live</b> (stored in <code>localStorage</code>).</p>
+      <p class="sub">Pick a game tab. Sounds are <b>opt-in</b>. Ambient video can be toggled. Your first action locks you to <b>Live</b> (stored in <code>localStorage</code>).</p>
     </header>
 
     <div class="controlbar">
@@ -175,6 +181,7 @@
       <button class="pill" id="musicToggle">Play Music</button>
       <div class="sw"><label for="musVol">Music</label><input id="musVol" type="range" min="0" max="100" value="35"></div>
       <button class="pill" id="muteAll">Mute All</button>
+      <button class="pill active" id="videoToggle">Video On</button>
     </div>
 
     <div class="tabs" id="tabs">
@@ -323,18 +330,20 @@
   </div>
 
 <script>
-/* ========= Ambient FX: particles + confetti ========= */
+/* ========= Canvas sizing ========= */
 const bg = document.getElementById('fx-bg');
+const trails = document.getElementById('fx-trails');
 const confetti = document.getElementById('fx-confetti');
-const ctx = bg.getContext('2d'), cfx = confetti.getContext('2d');
-function sizeCanv(){ bg.width=innerWidth; bg.height=innerHeight; confetti.width=innerWidth; confetti.height=innerHeight; }
+const ctx = bg.getContext('2d'), tfx = trails.getContext('2d'), cfx = confetti.getContext('2d');
+function sizeCanv(){ [bg,trails,confetti].forEach(c=>{ c.width=innerWidth; c.height=innerHeight; }); }
 addEventListener('resize', sizeCanv); sizeCanv();
 
+/* ========= Ambient particles ========= */
 const P = Array.from({length:90},()=>({
   x: Math.random()*bg.width, y: Math.random()*bg.height,
   r: Math.random()*1.8+0.6, s: Math.random()*0.6+0.2
 }));
-function tickBg(t){
+(function tickBg(){
   ctx.clearRect(0,0,bg.width,bg.height);
   ctx.fillStyle='rgba(120,190,255,.8)';
   P.forEach(p=>{
@@ -343,10 +352,31 @@ function tickBg(t){
     ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
   });
   requestAnimationFrame(tickBg);
-}
-requestAnimationFrame(tickBg);
+})();
 
-/* Confetti burst */
+/* ========= Glow trails (cursor/touch) ========= */
+const trailPts=[];
+function addPoint(x,y){
+  trailPts.push({x,y,life:1, vx:(Math.random()-.5)*1.2, vy:(Math.random()-.5)*1.2});
+  if(trailPts.length>180) trailPts.shift();
+}
+function drawTrails(){
+  tfx.clearRect(0,0,trails.width,trails.height);
+  trailPts.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy; p.life*=0.96;
+    const g= tfx.createRadialGradient(p.x,p.y,0,p.x,p.y,24);
+    g.addColorStop(0,`rgba(140,220,255,${0.35*p.life})`);
+    g.addColorStop(1,`rgba(140,220,255,0)`);
+    tfx.fillStyle=g; tfx.beginPath(); tfx.arc(p.x,p.y,24,0,Math.PI*2); tfx.fill();
+  });
+  requestAnimationFrame(drawTrails);
+}
+drawTrails();
+addEventListener('mousemove',e=>addPoint(e.clientX,e.clientY));
+addEventListener('touchmove',e=>{ const t=e.touches[0]; if(t) addPoint(t.clientX,t.clientY); }, {passive:true});
+addEventListener('touchstart',e=>{ const t=e.touches[0]; if(t) for(let i=0;i<12;i++) addPoint(t.clientX,t.clientY); }, {passive:true});
+
+/* ========= Confetti burst ========= */
 function confettiBurst(cx,cy){
   const N=120, parts=[];
   for(let i=0;i<N;i++){
@@ -369,11 +399,15 @@ function confettiBurst(cx,cy){
   })();
 }
 
-/* ===== Minimal realm helpers ===== */
+/* ========= Realm helpers ========= */
 function getChoice(){ try{return localStorage.getItem('realm_choice')}catch(e){return null} }
 function setChoice(v){ try{localStorage.setItem('realm_choice', v)}catch(e){} }
+const realmState = document.getElementById('realmState');
+function updateRealmLabel(){ const cur = getChoice(); realmState.textContent = cur ? `Locked to: ${cur.toUpperCase()}` : 'No lock'; }
+updateRealmLabel();
+function ensureLiveLock(){ if(getChoice()!=='live'){ setChoice('live'); updateRealmLabel(); } }
 
-/* ===== Audio (SFX + simple music) ===== */
+/* ========= Audio (SFX + simple music) ========= */
 let AC=null, sfxOn=false, musicOn=false, masterGain=null, sfxGain=null, musicGain=null, musicTimer=null;
 function ensureAC(){
   if(AC) return;
@@ -393,14 +427,9 @@ function envOsc({type='sine', freq=440, dur=0.12, gain=0.08, dest=sfxGain}){
 function clickSfx(){ envOsc({type:'square', freq:520, dur:.07, gain:.06}); }
 function flipSfx(){ envOsc({type:'triangle', freq:240, dur:.12, gain:.08}); }
 function tickSfx(){ envOsc({type:'square', freq:880, dur:.03, gain:.05}); }
-function winSfx(){
-  if(!AC||!sfxOn) return;
-  [0,0.12,0.24].forEach((d,i)=>setTimeout(()=>envOsc({type:'sine', freq:[740,880,1040][i], dur:.18, gain:.1}), d*1000));
-}
+function winSfx(){ [0,0.12,0.24].forEach((d,i)=>setTimeout(()=>envOsc({type:'sine', freq:[740,880,1040][i], dur:.18, gain:.1}), d*1000)); }
 function loseSfx(){ envOsc({type:'sawtooth', freq:220, dur:.25, gain:.08}); }
-function zapSfx(){
-  if(!AC||!sfxOn) return;
-  const start=AC.currentTime, z=AC.createOscillator(), g=AC.createGain();
+function zapSfx(){ if(!AC||!sfxOn) return; const start=AC.currentTime, z=AC.createOscillator(), g=AC.createGain();
   z.type='square'; z.frequency.setValueAtTime(1200,start); z.frequency.exponentialRampToValueAtTime(80,start+0.15);
   g.gain.setValueAtTime(.12,start); g.gain.exponentialRampToValueAtTime(.0001,start+0.16);
   z.connect(g); g.connect(sfxGain); z.start(); z.stop(start+0.17);
@@ -410,53 +439,40 @@ function copySfx(){ envOsc({type:'sine', freq:940, dur:.06, gain:.06}); }
 
 /* Simple chiptune loop */
 const melody=[523,587,659,784,659,587,523,392,440,523,659,587,523];
-function startMusic(){
-  if(!AC||musicOn) return;
-  musicOn=true;
-  let i=0;
-  musicTimer = setInterval(()=>{
-    if(!musicOn) return;
+function startMusic(){ if(!AC||musicOn) return; musicOn=true; let i=0;
+  musicTimer = setInterval(()=>{ if(!musicOn) return;
     const o=AC.createOscillator(), g=AC.createGain();
     o.type='triangle'; o.frequency.value=melody[i%melody.length];
-    g.gain.value=0; const t=AC.currentTime;
-    o.connect(g); g.connect(musicGain);
-    g.gain.linearRampToValueAtTime(.12,t+.02);
-    g.gain.exponentialRampToValueAtTime(.0001,t+.28);
-    o.start(t); o.stop(t+.3);
-    i++;
+    g.gain.value=0; const t=AC.currentTime; o.connect(g); g.connect(musicGain);
+    g.gain.linearRampToValueAtTime(.12,t+.02); g.gain.exponentialRampToValueAtTime(.0001,t+.28);
+    o.start(t); o.stop(t+.3); i++;
   }, 300);
 }
 function stopMusic(){ musicOn=false; if(musicTimer){ clearInterval(musicTimer); musicTimer=null; } }
 
-/* Controls */
+/* ========= Controls ========= */
 const sfxToggle=document.getElementById('sfxToggle');
 const musicToggle=document.getElementById('musicToggle');
 const muteAll=document.getElementById('muteAll');
 const sfxVol=document.getElementById('sfxVol');
 const musVol=document.getElementById('musVol');
-sfxToggle.addEventListener('click',()=>{
-  ensureAC(); AC.resume(); sfxOn=!sfxOn; sfxToggle.classList.toggle('active', sfxOn); clickSfx();
-});
-musicToggle.addEventListener('click',()=>{
-  ensureAC(); AC.resume();
-  if(!musicOn){ startMusic(); } else { stopMusic(); }
-  musicToggle.classList.toggle('active', musicOn);
-});
-muteAll.addEventListener('click',()=>{
-  ensureAC();
-  const muted = masterGain.gain.value>0;
-  masterGain.gain.value = muted ? 0 : 1;
-  muteAll.textContent = muted ? 'Unmute All' : 'Mute All';
-});
+const videoToggle=document.getElementById('videoToggle');
+const bgVideo=document.getElementById('bg-video');
+
+sfxToggle.addEventListener('click',()=>{ ensureAC(); AC.resume(); sfxOn=!sfxOn; sfxToggle.classList.toggle('active', sfxOn); clickSfx(); });
+musicToggle.addEventListener('click',()=>{ ensureAC(); AC.resume(); if(!musicOn){ startMusic(); } else { stopMusic(); } musicToggle.classList.toggle('active', musicOn); });
+muteAll.addEventListener('click',()=>{ ensureAC(); const muted = masterGain.gain.value>0; masterGain.gain.value = muted ? 0 : 1; muteAll.textContent = muted ? 'Unmute All' : 'Mute All'; });
 sfxVol.addEventListener('input',()=>{ ensureAC(); sfxGain.gain.value = sfxVol.value/100; });
 musVol.addEventListener('input',()=>{ ensureAC(); musicGain.gain.value = musVol.value/100; });
+videoToggle.addEventListener('click',()=>{
+  const on = bgVideo.style.display !== 'none';
+  bgVideo.style.display = on ? 'none' : 'block';
+  videoToggle.textContent = on ? 'Video Off' : 'Video On';
+  videoToggle.classList.toggle('active', !on);
+});
 
-/* ===== Tabs ===== */
+/* ===== Tabs and reset ===== */
 const tabs = document.getElementById('tabs');
-const realmState = document.getElementById('realmState');
-function updateRealmLabel(){ const cur = getChoice(); realmState.textContent = cur ? `Locked to: ${cur.toUpperCase()}` : 'No lock'; }
-updateRealmLabel();
-
 tabs.addEventListener('click', (e)=>{
   const btn = e.target.closest('.tabBtn'); if(!btn) return;
   tabs.querySelectorAll('.tabBtn').forEach(b=>b.classList.remove('active'));
@@ -467,7 +483,6 @@ tabs.addEventListener('click', (e)=>{
   if(sfxOn) clickSfx();
 });
 
-/* Reset buttons */
 document.getElementById('clearLock').addEventListener('click', ()=>{ try{localStorage.removeItem('realm_choice')}catch(e){}; updateRealmLabel(); if(sfxOn) clickSfx(); });
 document.getElementById('clearClaims').addEventListener('click', ()=>{
   ['live_lightning_claimed_v1','live_blackjack_claimed_v1','live_dt_claimed_v1','live_craps_claimed_v1','live_bac_squeeze_claimed_v1'].forEach(k=>{ try{localStorage.removeItem(k)}catch(e){} });
@@ -475,10 +490,35 @@ document.getElementById('clearClaims').addEventListener('click', ()=>{
   if(sfxOn) clickSfx();
 });
 
-/* Lock helper */
-function ensureLiveLock(){ if(getChoice()!=='live'){ setChoice('live'); updateRealmLabel(); } }
+/* ========= Voucher Reel Reveal ========= */
+const REEL_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+function reelReveal(codeEl, copyBtnEl, finalCode, opts={}){
+  const {spinMs=900, slots=finalCode.length, group=finalCode} = opts;
+  codeEl.style.display='block'; copyBtnEl.style.display='none';
+  let frame=0; const step=32; // total frames
+  const target=finalCode.split('');
+  const timer=setInterval(()=>{
+    frame++;
+    const progress = Math.min(1, frame/step);
+    const revealIdx = Math.floor(progress*slots);
+    // Build spinning string
+    let out='';
+    for(let i=0;i<slots;i++){
+      if(i<revealIdx){ out += target[i]; }
+      else{ out += REEL_CHARS[(Math.random()*REEL_CHARS.length)|0]; }
+    }
+    codeEl.textContent = out;
+    if(sfxOn) tickSfx();
+    if(progress>=1){
+      clearInterval(timer);
+      codeEl.textContent = group;
+      copyBtnEl.style.display='inline-block';
+      if(sfxOn) copySfx();
+    }
+  }, spinMs/step);
+}
 
-/* ---------- Lightning ---------- */
+/* ========= LIGHTNING ========= */
 (function(){
   const CLAIM_KEY='live_lightning_claimed_v1', CODE_STD='LIVE-LIGHT-WIN', CODE_XL='LIVE-LIGHT-XL';
   const pickGrid=document.getElementById('lr-pickGrid');
@@ -506,45 +546,47 @@ function ensureLiveLock(){ if(getChoice()!=='live'){ setChoice('live'); updateRe
     const mults=[50,100,200,150,300];
     lightning=[...picks].map(n=>({n, x: mults[(Math.random()*mults.length)|0]}));
     lightBar.innerHTML=''; lightning.forEach(L=>{ const tag=document.createElement('div'); tag.className='lr-bolt lr-flash'; tag.textContent=`⚡ ${L.n} ×${L.x}`; lightBar.appendChild(tag); });
-    // Flash and zap
-    flashFx.style.opacity='1'; flashFx.style.transition='opacity .18s ease';
-    setTimeout(()=>flashFx.style.opacity='0', 180);
+    flashFx.style.opacity='1'; flashFx.style.transition='opacity .18s ease'; setTimeout(()=>flashFx.style.opacity='0', 180);
     if(sfxOn){ zapSfx(); }
   }
-  function finalize(code){ codeBox.style.display='block'; codeBox.textContent=code; copyBtn.style.display='inline-block'; spinBtn.disabled=true; spun=true; }
-  try{ const prior=localStorage.getItem(CLAIM_KEY); if(prior){ finalize(JSON.parse(prior).code||CODE_STD); } }catch(e){}
+  function finalize(code){
+    // Reel animation
+    reelReveal(codeBox, copyBtn, code, {spinMs:1100, slots:code.length, group:code});
+    spinBtn.disabled=true; spun=true;
+  }
+  try{ const prior=localStorage.getItem(CLAIM_KEY); if(prior){ const saved = JSON.parse(prior).code||CODE_STD; codeBox.style.display='block'; codeBox.textContent=saved; copyBtn.style.display='inline-block'; spinBtn.disabled=true; spun=true; } }catch(e){}
+
   let lastTick = -1;
-  spinBtn.addEventListener('click', ()=>{
+  document.getElementById('lr-copyBtn').addEventListener('click',()=>{ const t=codeBox.textContent.trim(); if(!t)return; navigator.clipboard.writeText(t).then(()=>{ copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy Code',1200); if(sfxOn) copySfx(); });});
+
+  document.getElementById('lr-spinBtn').addEventListener('click', ()=>{
     if(selected===null || spun) return; ensureLiveLock(); spun=true; spinBtn.disabled=true; chooseLightning();
     const winIdx=(Math.random()*37)|0; const targetDeg = 360 - (360/N)*winIdx - (360/(N*2));
     const turns = 6, total = turns*360 + targetDeg; const start=performance.now(), dur=4200;
     function anim(t){
       const p=Math.min(1,(t-start)/dur), e=1-Math.pow(1-p,3);
       const rot = e*total; slices.style.transform=`rotate(${rot}deg)`;
-      // Tick sound per crossing
       const tickIndex = Math.floor((rot/360)*N)%N;
       if(sfxOn && tickIndex!==lastTick){ tickSfx(); lastTick=tickIndex; }
       if(p<1) requestAnimationFrame(anim); else{
         const lightningHit = lightning.some(l=>l.n===winIdx); const win = (selected===winIdx);
         let code='TRY-AGAIN-NEXT-TIME';
         if(win && lightningHit) code=CODE_XL; else if(win) code=CODE_STD;
-        codeBox.style.display='block'; codeBox.textContent=code;
         if(win){
-          copyBtn.style.display='inline-block';
+          reelReveal(codeBox, copyBtn, code);
           try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code, ts:Date.now(), n:selected, winIdx, lightning})); }catch(e){}
-          if(sfxOn) winSfx();
-          confettiBurst(innerWidth/2, innerHeight*.35);
+          if(sfxOn) winSfx(); confettiBurst(innerWidth/2, innerHeight*.35);
         }else{
+          reelReveal(codeBox, copyBtn, code);
           if(sfxOn) loseSfx();
         }
       }
     }
     requestAnimationFrame(anim);
   });
-  copyBtn.addEventListener('click',()=>{ const t=codeBox.textContent.trim(); if(!t)return; navigator.clipboard.writeText(t).then(()=>{ copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy Code',1200); if(sfxOn) copySfx(); });});
 })();
 
-/* ---------- Blackjack ---------- */
+/* ========= BLACKJACK ========= */
 (function(){
   const CLAIM_KEY='live_blackjack_claimed_v1', CODE='LIVE-BJ-21';
   const dealerEl=document.getElementById('bj-dealerHand'), playerEl=document.getElementById('bj-playerHand');
@@ -553,12 +595,10 @@ function ensureLiveLock(){ if(getChoice()!=='live'){ setChoice('live'); updateRe
   const codeBox=document.getElementById('bj-codeBox'), copyBtn=document.getElementById('bj-copyBtn');
   let deck=[], dealer=[], player=[], inRound=false, dealerHidden=true;
 
-  function makeDeck(){ const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K']; const suits=['♠','♥','♦','♣']; const d=[]; suits.forEach(s=>ranks.forEach(r=>d.push({r,s}))); for(let i=d.length-1;i>0;i--){const j=(Math.random()*(i+1))|0; [d[i],d[j]]=[d[j],d[i]];} return d; }
+  function makeDeck(){ const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K']; const suits=['♠','♥','♦','♣']; const d=[]; suits.forEach(s=>ranks.forEach(r=>d.push({r,s}))); for(let i=d.length-1;i>0;i++){const j=(Math.random()*(i+1))|0; [d[i],d[j]]=[d[j],d[i]];} return d; }
   function value(hand){ let sum=0, aces=0; hand.forEach(c=>{ if(c.r==='A'){aces++; sum+=1} else if(['K','Q','J','10'].includes(c.r)){sum+=10}else sum+=Number(c.r) }); while(aces>0 && sum+10<=21){ sum+=10; aces--; } return sum; }
   function cardEl(c){ const el=document.createElement('div'); el.className='bj-card'; if(!c){ el.classList.add('bj-down'); el.textContent=''; return el; } el.innerHTML=`<div>${c.r}</div>`; return el; }
   function render(){ dealerEl.innerHTML=''; playerEl.innerHTML=''; dealer.forEach((c,i)=>dealerEl.appendChild(cardEl(i===0 && dealerHidden ? null : c))); player.forEach(c=>playerEl.appendChild(cardEl(c))); dealerScore.textContent = dealerHidden ? '??' : value(dealer); playerScore.textContent = value(player); }
-  function finalize(code){ codeBox.style.display='inline-block'; codeBox.textContent=code; copyBtn.style.display='inline-block'; hitBtn.disabled=true; standBtn.disabled=true; dealBtn.disabled=true; dealerHidden=false; render(); }
-  try{ const prior=localStorage.getItem(CLAIM_KEY); if(prior){ finalize(JSON.parse(prior).code||CODE); } }catch(e){}
   function animateDeal(toEl, card){
     const el = cardEl(card); el.style.transform='translateY(-10px) scale(.9)'; el.style.opacity='0';
     toEl.appendChild(el);
@@ -568,8 +608,14 @@ function ensureLiveLock(){ if(getChoice()!=='live'){ setChoice('live'); updateRe
     });
     if(sfxOn) flipSfx();
   }
+  function finalizeWin(){
+    reelReveal(codeBox, copyBtn, CODE);
+    try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE, ts:Date.now()})); }catch(e){}
+    if(sfxOn) winSfx(); confettiBurst(innerWidth/2, innerHeight*.52);
+  }
+  try{ const prior=localStorage.getItem(CLAIM_KEY); if(prior){ const saved = JSON.parse(prior).code||CODE; codeBox.style.display='block'; codeBox.textContent=saved; copyBtn.style.display='inline-block'; dealBtn.disabled=true; } }catch(e){}
+
   function deal(){ ensureLiveLock(); deck = makeDeck(); dealer=[]; player=[]; dealerHidden=true; inRound=true; statusEl.textContent='Dealing...'; hitBtn.disabled=true; standBtn.disabled=true; dealBtn.disabled=true;
-    // Animated initial deal
     player.push(deck.pop()); animateDeal(playerEl, player[0]);
     setTimeout(()=>{ dealer.push(deck.pop()); animateDeal(dealerEl, dealerHidden?null:dealer[0]); },180);
     setTimeout(()=>{ player.push(deck.pop()); animateDeal(playerEl, player[1]); },360);
@@ -577,32 +623,32 @@ function ensureLiveLock(){ if(getChoice()!=='live'){ setChoice('live'); updateRe
     setTimeout(()=>{ statusEl.textContent='Hit or Stand'; hitBtn.disabled=false; standBtn.disabled=false; render(); if(value(player)===21){ stand(); } }, 720);
     if(sfxOn) clickSfx();
   }
-  function hit(){ if(!inRound) return; player.push(deck.pop()); render(); // flip anim last card
-    const last = playerEl.lastElementChild; last.classList.add('flip'); if(sfxOn) flipSfx();
-    if(value(player)>21){ statusEl.textContent='Bust! Dealer wins'; end(false); }
-  }
+  function hit(){ if(!inRound) return; player.push(deck.pop()); render(); const last = playerEl.lastElementChild; last.classList.add('flip'); if(sfxOn) flipSfx(); if(value(player)>21){ statusEl.textContent='Bust! Dealer wins'; end(false); } }
   function stand(){ if(!inRound) return; dealerHidden=false; render();
     (function dealerDraw(){
       if(value(dealer)<17){ dealer.push(deck.pop()); render(); const last=dealerEl.lastElementChild; last.classList.add('flip'); if(sfxOn) flipSfx(); setTimeout(dealerDraw, 360); }
       else{
         const p=value(player), d=value(dealer);
         if(p===d){ statusEl.textContent='Push'; end(false,true); return; }
-        const win=(d>21||p>d); statusEl.textContent = win ? 'You win! ' : 'Dealer wins';
+        const win=(d>21||p>d); statusEl.textContent = win ? 'You win!' : 'Dealer wins';
         end(win);
       }
     })();
   }
-  function end(win,push=false){ inRound=false; hitBtn.disabled=true; standBtn.disabled=true; dealBtn.disabled=false;
-    if(win){ finalize(CODE); try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE, ts:Date.now()})); }catch(e){} if(sfxOn) winSfx(); confettiBurst(innerWidth/2, innerHeight*.52); }
+  function end(win,push=false){
+    inRound=false; hitBtn.disabled=true; standBtn.disabled=true; dealBtn.disabled=false;
+    if(win){ finalizeWin(); }
     else if(push){ /* allow redeal */ }
-    else { codeBox.style.display='inline-block'; codeBox.textContent='TRY-AGAIN-NEXT-TIME'; if(sfxOn) loseSfx(); }
+    else { reelReveal(codeBox, copyBtn, 'TRY-AGAIN-NEXT-TIME'); if(sfxOn) loseSfx(); }
   }
-  dealBtn.addEventListener('click',deal); hitBtn.addEventListener('click',hit); standBtn.addEventListener('click',stand);
-  copyBtn.addEventListener('click',()=>{ const t=codeBox.textContent.trim(); if(!t)return; navigator.clipboard.writeText(t).then(()=>{ copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy Code',1200); if(sfxOn) copySfx(); });});
+  document.getElementById('bj-dealBtn').addEventListener('click',deal);
+  document.getElementById('bj-hitBtn').addEventListener('click',hit);
+  document.getElementById('bj-standBtn').addEventListener('click',stand);
+  document.getElementById('bj-copyBtn').addEventListener('click',()=>{ const t=codeBox.textContent.trim(); if(!t)return; navigator.clipboard.writeText(t).then(()=>{ document.getElementById('bj-copyBtn').textContent='Copied!'; setTimeout(()=>document.getElementById('bj-copyBtn').textContent='Copy Code',1200); if(sfxOn) copySfx(); });});
   render();
 })();
 
-/* ---------- Dragon Tiger ---------- */
+/* ========= DRAGON TIGER ========= */
 (function(){
   const CLAIM_KEY='live_dt_claimed_v1', CODE='LIVE-DRAGON-TIGER';
   const statusEl=document.getElementById('dt-status'), dEl=document.getElementById('dt-dCard'), tEl=document.getElementById('dt-tCard');
@@ -611,41 +657,43 @@ function ensureLiveLock(){ if(getChoice()!=='live'){ setChoice('live'); updateRe
   const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
   function draw(){ return ranks[(Math.random()*ranks.length)|0]; }
   function rv(r){ if(r==='A') return 1; if(['J','Q','K'].includes(r)) return 10+['J','Q','K'].indexOf(r)+1; return Number(r); }
-  function finalize(code){ codeBox.style.display='block'; codeBox.textContent=code; copyBtn.style.display='inline-block'; }
-  try{ const prior=localStorage.getItem(CLAIM_KEY); if(prior){ finalize(JSON.parse(prior).code||CODE); } }catch(e){}
-  let picked=false;
+  function finalizeWin(){ reelReveal(codeBox, copyBtn, CODE); try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE, ts:Date.now()})); }catch(e){} if(sfxOn) winSfx(); confettiBurst(innerWidth/2, innerHeight*.62); }
+  try{ const prior=localStorage.getItem(CLAIM_KEY); if(prior){ const saved = JSON.parse(prior).code||CODE; codeBox.style.display='block'; codeBox.textContent=saved; copyBtn.style.display='inline-block'; } }catch(e){}
+
   function flip(el, val){
     el.classList.remove('dt-down');
     setTimeout(()=>{ el.classList.add('dt-flip'); el.textContent=val; if(sfxOn) flipSfx(); }, 60);
   }
   function go(side){
-    if(picked) return; picked=true; ensureLiveLock();
+    btnD.disabled=true; btnT.disabled=true;
+    ensureLiveLock();
     const d=draw(), t=draw();
     flip(dEl,d); flip(tEl,t);
     const dv=rv(d), tv=rv(t); const winSide = dv>tv ? 'dragon' : tv>dv ? 'tiger' : 'tie';
-    if(winSide==='tie'){ statusEl.innerHTML='Tie — <span class="badge-lose">no voucher</span>'; codeBox.style.display='block'; codeBox.textContent='TRY-AGAIN-NEXT-TIME'; if(sfxOn) loseSfx(); return; }
+    if(winSide==='tie'){ statusEl.innerHTML='Tie — <span class="badge-lose">no voucher</span>'; reelReveal(codeBox, copyBtn, 'TRY-AGAIN-NEXT-TIME'); if(sfxOn) loseSfx(); return; }
     const win = (side===winSide);
     statusEl.innerHTML = win ? 'You win! <span class="badge-win">WIN</span>' : 'You chose the other side';
-    if(win){ try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE, ts:Date.now()})); }catch(e){} finalize(CODE); if(sfxOn) winSfx(); confettiBurst(innerWidth/2, innerHeight*.62); }
-    else { codeBox.style.display='block'; codeBox.textContent='TRY-AGAIN-NEXT-TIME'; if(sfxOn) loseSfx(); }
+    if(win) finalizeWin(); else { reelReveal(codeBox, copyBtn, 'TRY-AGAIN-NEXT-TIME'); if(sfxOn) loseSfx(); }
   }
   btnD.addEventListener('click',()=>go('dragon'));
   btnT.addEventListener('click',()=>go('tiger'));
   copyBtn.addEventListener('click',()=>{ const t=codeBox.textContent.trim(); if(!t)return; navigator.clipboard.writeText(t).then(()=>{ copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy Code',1200); if(sfxOn) copySfx(); });});
 })();
 
-/* ---------- Craps ---------- */
+/* ========= CRAPS ========= */
 (function(){
   const CLAIM_KEY='live_craps_claimed_v1', CODE='LIVE-PASS-WIN';
   const betPass=document.getElementById('cr-betPass'), betDont=document.getElementById('cr-betDont'), rollBtn=document.getElementById('cr-rollBtn');
   const d1El=document.getElementById('cr-d1'), d2El=document.getElementById('cr-d2'), statusEl=document.getElementById('cr-status');
   const codeBox=document.getElementById('cr-codeBox'), copyBtn=document.getElementById('cr-copyBtn');
   let bet=null, point=null, resolved=false, comeOut=true;
-  function finalize(code){ codeBox.style.display='block'; codeBox.textContent=code; copyBtn.style.display='inline-block'; }
-  try{ const prior=localStorage.getItem(CLAIM_KEY); if(prior){ finalize(JSON.parse(prior).code||CODE); rollBtn.disabled=true; } }catch(e){}
+  function finalizeWin(){ reelReveal(codeBox, copyBtn, CODE); try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE, ts:Date.now()})); }catch(e){} if(sfxOn) winSfx(); confettiBurst(innerWidth/2, innerHeight*.45); }
+  try{ const prior=localStorage.getItem(CLAIM_KEY); if(prior){ const saved=JSON.parse(prior).code||CODE; codeBox.style.display='block'; codeBox.textContent=saved; copyBtn.style.display='inline-block'; rollBtn.disabled=true; } }catch(e){}
+
   function setBet(b){ if(bet) return; ensureLiveLock(); bet=b; rollBtn.disabled=false; statusEl.textContent='Tap Roll'; betPass.disabled=true; betDont.disabled=true; if(sfxOn) clickSfx(); }
   betPass.addEventListener('click',()=>setBet('pass'));
   betDont.addEventListener('click',()=>setBet('dont'));
+
   function roll(){
     if(resolved) return;
     d1El.classList.add('shake'); d2El.classList.add('shake'); if(sfxOn) diceSfx();
@@ -664,13 +712,13 @@ function ensureLiveLock(){ if(getChoice()!=='live'){ setChoice('live'); updateRe
       }
     }, 380);
   }
-  function win(){ resolved=true; statusEl.innerHTML='You win! <span class="badge-win">WIN</span>'; finalize(CODE); try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE, ts:Date.now()})); }catch(e){} rollBtn.disabled=true; if(sfxOn) winSfx(); confettiBurst(innerWidth/2, innerHeight*.45); }
-  function lose(){ resolved=true; statusEl.textContent='Lost this round'; codeBox.style.display='block'; codeBox.textContent='TRY-AGAIN-NEXT-TIME'; rollBtn.disabled=true; if(sfxOn) loseSfx(); }
+  function win(){ resolved=true; statusEl.innerHTML='You win! <span class="badge-win">WIN</span>'; finalizeWin(); rollBtn.disabled=true; }
+  function lose(){ resolved=true; statusEl.textContent='Lost this round'; reelReveal(codeBox, copyBtn, 'TRY-AGAIN-NEXT-TIME'); rollBtn.disabled=true; if(sfxOn) loseSfx(); }
   rollBtn.addEventListener('click', roll);
   copyBtn.addEventListener('click',()=>{ const t=codeBox.textContent.trim(); if(!t)return; navigator.clipboard.writeText(t).then(()=>{ copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy Code',1200); if(sfxOn) copySfx(); });});
 })();
 
-/* ---------- Baccarat Squeeze ---------- */
+/* ========= BACCARAT SQUEEZE ========= */
 (function(){
   const CLAIM_KEY='live_bac_squeeze_claimed_v1';
   const CODE_WIN='LIVE-BAC-WIN', CODE_LOSE='TRY-AGAIN-NEXT-TIME';
@@ -719,32 +767,29 @@ function ensureLiveLock(){ if(getChoice()!=='live'){ setChoice('live'); updateRe
     if(!bothHandsShown()) return;
     const ps=score(player), bs=score(banker);
     const winner = ps>bs ? 'player' : bs>ps ? 'banker' : 'tie';
-    if(winner==='tie'){ result.textContent='Tie — no voucher'; codeBox.style.display='block'; codeBox.textContent='TRY-AGAIN-NEXT-TIME'; if(sfxOn) loseSfx(); return; }
+    if(winner==='tie'){ result.textContent='Tie — no voucher'; reelReveal(codeBox, copyBtn, CODE_LOSE); if(sfxOn) loseSfx(); return; }
     const win = (bet===winner);
     result.textContent = win ? 'You win!' : (winner==='player'?'Player wins':'Banker wins');
-    if(win){ finalize(CODE_WIN); try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE_WIN, ts:Date.now()})); }catch(e){} if(sfxOn) winSfx(); confettiBurst(innerWidth/2, innerHeight*.58); }
-    else { codeBox.style.display='block'; codeBox.textContent=CODE_LOSE; if(sfxOn) loseSfx(); }
+    if(win){
+      reelReveal(codeBox, copyBtn, CODE_WIN);
+      try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE_WIN, ts:Date.now()})); }catch(e){}
+      if(sfxOn) winSfx(); confettiBurst(innerWidth/2, innerHeight*.58);
+    } else {
+      reelReveal(codeBox, copyBtn, CODE_LOSE);
+      if(sfxOn) loseSfx();
+    }
   }
-  function finalize(code){ codeBox.style.display='block'; codeBox.textContent=code; copyBtn.style.display='inline-block'; }
-
-  betPlayer.addEventListener('click', ()=> choose('player'));
-  betBanker.addEventListener('click', ()=> choose('banker'));
   function choose(side){
     if(bet) return; ensureLiveLock();
     bet=side; dealBtn.disabled=false; result.textContent='Bet on ' + (side==='player'?'Player':'Banker') + ' — tap Deal';
     betPlayer.disabled=true; betBanker.disabled=true;
     if(sfxOn) clickSfx();
   }
-  dealBtn.addEventListener('click', ()=>{
-    if(dealt) return; dealt=true;
-    player = [dealCard(), dealCard()];
-    banker = [dealCard(), dealCard()];
-    renderHand(pHand, player); renderHand(bHand, banker);
-    result.textContent='Squeeze to reveal';
-  });
+  betPlayer.addEventListener('click', ()=> choose('player'));
+  betBanker.addEventListener('click', ()=> choose('banker'));
+  dealBtn.addEventListener('click', ()=>{ if(dealt) return; dealt=true; player=[dealCard(),dealCard()]; banker=[dealCard(),dealCard()]; renderHand(pHand,player); renderHand(bHand,banker); result.textContent='Squeeze to reveal'; });
 
-  try{ const prior=localStorage.getItem(CLAIM_KEY); if(prior){ finalize(JSON.parse(prior).code||CODE_WIN); } }catch(e){}
-
+  try{ const prior=localStorage.getItem(CLAIM_KEY); if(prior){ const saved=JSON.parse(prior).code||CODE_WIN; codeBox.style.display='block'; codeBox.textContent=saved; copyBtn.style.display='inline-block'; } }catch(e){}
   copyBtn.addEventListener('click',()=>{ const t=codeBox.textContent.trim(); if(!t)return; navigator.clipboard.writeText(t).then(()=>{ copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy Code',1200); if(sfxOn) copySfx(); });});
 })();
 </script>
