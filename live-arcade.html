@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>Live Arcade — Four Mini Games</title>
+<title>Live Arcade — Five Mini Games</title>
 <style>
   :root{--ink:#eaf2ff;--mut:#9fb0d9;--g1:#71e1ff;--g2:#25c3ff}
   *{box-sizing:border-box} html,body{height:100%}
@@ -36,14 +36,12 @@
   .ghost{ background:#2b2b2b; color:#fff }
   .primary{ background:linear-gradient(to right,var(--g1),var(--g2)); color:#061018 }
 
-  /* Cards / containers */
   .card{ position:relative; border-radius:22px; padding:18px; margin-top:12px;
          background:linear-gradient(180deg,#1b2a56,#0f1832);
          outline:1px solid rgba(255,255,255,.08); box-shadow:0 16px 60px rgba(0,0,0,.55) }
-
   .game{ display:none } .game.active{ display:block }
 
-  /* Shared game bits */
+  /* Shared UI */
   .row.center{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap }
   .code{ display:none; margin-top:10px; text-align:center;
          font-family:ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.5px;
@@ -89,6 +87,25 @@
   .cr-dice{display:flex;gap:12px;justify-content:center;margin:12px 0}
   .cr-die{width:64px;height:64px;background:#fff;border-radius:10px;display:grid;place-items:center;color:#111;font-weight:900;box-shadow:0 8px 20px rgba(0,0,0,.35)}
   .cr-status{color:#ffd86a;font-weight:900;text-shadow:0 0 10px rgba(255,216,106,.6);margin-top:6px}
+
+  /* ---------- Baccarat Squeeze ---------- */
+  .bc-felt{border-radius:18px;background:radial-gradient(closest-side,#13325f,#0e1f43);outline:1px solid rgba(255,255,255,.08);box-shadow:inset 0 0 60px rgba(0,0,0,.6);padding:14px}
+  .bc-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center;margin-bottom:8px}
+  .bc-zone{display:grid;gap:8px;grid-template-columns:1fr 1fr;align-items:center}
+  .bc-side{border-radius:16px;background:rgba(0,0,0,.25);padding:12px;outline:1px solid rgba(255,255,255,.08)}
+  .bc-side h3{margin:0 0 6px;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+  .bc-hand{display:flex;gap:10px;justify-content:center;min-height:120px}
+  .bc-card{position:relative;width:86px;height:120px;border-radius:12px;background:radial-gradient(220px 140px at 50% -20%,#fff,#e9eefc 40%,#c8d4f3 100%);outline:2px solid #e5ecff;box-shadow:0 10px 24px rgba(0,0,0,.35);display:grid;place-items:center;font-weight:900;color:#1a2050;overflow:hidden}
+  .bc-face{filter:blur(3px)} .bc-card.show .bc-face{filter:none;transition:filter .2s}
+  .bc-cover{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(10,16,30,.75),rgba(10,16,30,.55));}
+  .bc-corners{position:absolute;inset:0}
+  .bc-corner{position:absolute;width:40px;height:40px;background:rgba(10,16,30,.92);outline:1px solid rgba(255,255,255,.06);opacity:.95}
+  .bc-corner.off{opacity:0;pointer-events:none;transition:opacity .15s}
+  .bc-card.show .bc-corners{display:none}
+  .bc-tl{left:0;top:0;clip-path:polygon(0 0,100% 0,0 100%)} .bc-tr{right:0;top:0;clip-path:polygon(0 0,100% 0,100% 100%)} 
+  .bc-bl{left:0;bottom:0;clip-path:polygon(0 0,100% 100%,0 100%)} .bc-br{right:0;bottom:0;clip-path:polygon(100% 0,100% 100%,0 100%)}
+  .bc-score{text-align:center;color:#ffd86a;font-weight:900;text-shadow:0 0 10px rgba(255,216,106,.6);margin-top:6px}
+  .bc-status{text-align:center;margin-top:10px;color:#9fb0d9}
 </style>
 </head>
 <body>
@@ -103,6 +120,7 @@
       <button class="tabBtn" data-tab="blackjack">🂡 Blackjack</button>
       <button class="tabBtn" data-tab="dragontiger">🐉🐯 Dragon Tiger</button>
       <button class="tabBtn" data-tab="craps">🎲 Craps</button>
+      <button class="tabBtn" data-tab="baccarat">🂢 Baccarat Squeeze</button>
     </div>
 
     <div class="panel">
@@ -114,7 +132,7 @@
       <div style="margin-top:6px">Testing only — clears <code>localStorage</code> keys for these games.</div>
     </div>
 
-    <!-- =============== LIGHTNING =============== -->
+    <!-- LIGHTNING -->
     <section class="card game active" id="game-lightning">
       <h2 style="margin:0 0 8px;font-size:20px;font-weight:900;text-transform:uppercase">Lightning Roulette Pick</h2>
       <p class="sub" style="margin:0 0 12px">Pick one number (0–36). Lightning strikes before spin. Exact hit wins; lightning hit pays premium voucher.</p>
@@ -141,7 +159,7 @@
       </div>
     </section>
 
-    <!-- =============== BLACKJACK =============== -->
+    <!-- BLACKJACK -->
     <section class="card game" id="game-blackjack">
       <h2 style="margin:0 0 8px;font-size:20px;font-weight:900;text-transform:uppercase">Mini Blackjack</h2>
       <p class="sub" style="margin:0 0 12px">Beat the dealer to reveal your voucher.</p>
@@ -168,7 +186,7 @@
       </div>
     </section>
 
-    <!-- =============== DRAGON TIGER =============== -->
+    <!-- DRAGON TIGER -->
     <section class="card game" id="game-dragontiger">
       <h2 style="margin:0 0 8px;font-size:20px;font-weight:900;text-transform:uppercase">Dragon Tiger</h2>
       <p class="sub" style="margin:0 0 12px">Pick a side, draw 1 card each. Highest rank wins (A low).</p>
@@ -189,7 +207,7 @@
       <button class="copy" id="dt-copyBtn">Copy Code</button>
     </section>
 
-    <!-- =============== CRAPS =============== -->
+    <!-- CRAPS -->
     <section class="card game" id="game-craps">
       <h2 style="margin:0 0 8px;font-size:20px;font-weight:900;text-transform:uppercase">Mini Craps — Pass Line</h2>
       <p class="sub" style="margin:0 0 12px">Choose <b>Pass</b> or <b>Don’t Pass</b>. Come-out → point cycle.</p>
@@ -208,20 +226,48 @@
         <button class="copy" id="cr-copyBtn">Copy Code</button>
       </div>
     </section>
+
+    <!-- BACCARAT SQUEEZE -->
+    <section class="card game" id="game-baccarat">
+      <h2 style="margin:0 0 8px;font-size:20px;font-weight:900;text-transform:uppercase">Baccarat Squeeze (Lite)</h2>
+      <p class="sub" style="margin:0 0 12px">Pick a side, then “squeeze” the corners to reveal. Highest total (mod 10) wins.</p>
+
+      <div class="bc-felt">
+        <div class="bc-row">
+          <button class="btn primary" id="bc-betPlayer">Bet Player</button>
+          <button class="btn ghost"   id="bc-betBanker">Bet Banker</button>
+          <button class="btn primary" id="bc-dealBtn" disabled>Deal</button>
+        </div>
+
+        <div class="bc-zone">
+          <div class="bc-side">
+            <h3>🂡 Player <span id="bc-pScore">—</span></h3>
+            <div class="bc-hand" id="bc-pHand"></div>
+          </div>
+          <div class="bc-side">
+            <h3>🂱 Banker <span id="bc-bScore">—</span></h3>
+            <div class="bc-hand" id="bc-bHand"></div>
+          </div>
+        </div>
+
+        <div class="bc-score" id="bc-result">Place your bet</div>
+        <div class="bc-status" id="bc-hint">Tap each card’s corners to peel. Reveal at least 3 corners to flip.</div>
+
+        <div class="code" id="bc-codeBox">LIVE-BAC-XXXX</div>
+        <button class="copy" id="bc-copyBtn">Copy Code</button>
+      </div>
+    </section>
   </div>
 
 <script>
-/* ===== Minimal realm helpers (fallback if you don't include assets/common.js) ===== */
+/* ===== Minimal realm helpers ===== */
 function getChoice(){ try{return localStorage.getItem('realm_choice')}catch(e){return null} }
 function setChoice(v){ try{localStorage.setItem('realm_choice', v)}catch(e){} }
 
 /* ===== Tabs ===== */
 const tabs = document.getElementById('tabs');
 const realmState = document.getElementById('realmState');
-function updateRealmLabel(){
-  const cur = getChoice();
-  realmState.textContent = cur ? `Locked to: ${cur.toUpperCase()}` : 'No lock';
-}
+function updateRealmLabel(){ const cur = getChoice(); realmState.textContent = cur ? `Locked to: ${cur.toUpperCase()}` : 'No lock'; }
 updateRealmLabel();
 
 tabs.addEventListener('click', (e)=>{
@@ -236,180 +282,101 @@ tabs.addEventListener('click', (e)=>{
 /* Reset buttons */
 document.getElementById('clearLock').addEventListener('click', ()=>{ try{localStorage.removeItem('realm_choice')}catch(e){}; updateRealmLabel(); });
 document.getElementById('clearClaims').addEventListener('click', ()=>{
-  ['live_lightning_claimed_v1','live_blackjack_claimed_v1','live_dt_claimed_v1','live_craps_claimed_v1'].forEach(k=>{ try{localStorage.removeItem(k)}catch(e){} });
+  ['live_lightning_claimed_v1','live_blackjack_claimed_v1','live_dt_claimed_v1','live_craps_claimed_v1','live_bac_squeeze_claimed_v1'].forEach(k=>{ try{localStorage.removeItem(k)}catch(e){} });
   alert('Claims cleared for testing.');
 });
 
-/* Lock on first action utility */
+/* Lock helper */
 function ensureLiveLock(){ if(getChoice()!=='live'){ setChoice('live'); updateRealmLabel(); } }
 
-/* ========== GAME 1: LIGHTNING ROULETTE ========== */
-(function initLightning(){
+/* ---------- Lightning ---------- */
+(function(){
   const CLAIM_KEY='live_lightning_claimed_v1', CODE_STD='LIVE-LIGHT-WIN', CODE_XL='LIVE-LIGHT-XL';
   const pickGrid=document.getElementById('lr-pickGrid');
   const reds=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
   const slices=document.getElementById('lr-slices'); const N=37;
   const lightBar=document.getElementById('lr-lightBar');
   const spinBtn=document.getElementById('lr-spinBtn'), codeBox=document.getElementById('lr-codeBox'), copyBtn=document.getElementById('lr-copyBtn');
-
   let selected=null, spun=false, lightning=[];
 
-  // grid
   for(let n=0;n<=36;n++){
     const b=document.createElement('button'); b.className='lr-num ' + (n===0?'lr-zero':(reds.has(n)?'lr-red':'lr-black')); b.textContent=n;
-    b.addEventListener('click',()=>{
-      if(spun) return;
-      selected=n;
-      [...pickGrid.children].forEach(x=>x.classList.remove('sel'));
-      b.classList.add('sel');
-      spinBtn.disabled=false;
-    });
+    b.addEventListener('click',()=>{ if(spun) return; selected=n; [...pickGrid.children].forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); spinBtn.disabled=false; });
     pickGrid.appendChild(b);
   }
-  // wheel
   for(let i=0;i<N;i++){
-    const deg=(360/N)*i;
-    const el=document.createElement('div');
-    el.className='lr-slice';
+    const deg=(360/N)*i; const el=document.createElement('div'); el.className='lr-slice';
     el.style.transform=`translate(-50%,-50%) rotate(${deg}deg)`;
     const col = i===0?'#0b5c3b' : (reds.has(i)?'#7a1a28':'#1a1a1a');
     el.style.background = `linear-gradient(180deg, ${col}, #101010)`;
-    el.innerHTML=`<div class="lr-label">${i}</div>`;
-    slices.appendChild(el);
+    el.innerHTML=`<div class="lr-label">${i}</div>`; slices.appendChild(el);
   }
   function chooseLightning(){
-    const how=2+((Math.random()*2)|0);
-    const picks=new Set();
-    while(picks.size<how){ picks.add((Math.random()*37)|0); }
+    const how=2+((Math.random()*2)|0), picks=new Set(); while(picks.size<how){ picks.add((Math.random()*37)|0); }
     const mults=[50,100,200,150,300];
     lightning=[...picks].map(n=>({n, x: mults[(Math.random()*mults.length)|0]}));
-    lightBar.innerHTML='';
-    lightning.forEach(L=>{
-      const tag=document.createElement('div'); tag.className='lr-bolt lr-flash'; tag.textContent=`⚡ ${L.n} ×${L.x}`;
-      lightBar.appendChild(tag);
-    });
+    lightBar.innerHTML=''; lightning.forEach(L=>{ const tag=document.createElement('div'); tag.className='lr-bolt lr-flash'; tag.textContent=`⚡ ${L.n} ×${L.x}`; lightBar.appendChild(tag); });
   }
-  function finalize(code){
-    codeBox.style.display='block'; codeBox.textContent=code; copyBtn.style.display='inline-block'; spinBtn.disabled=true; spun=true;
-  }
-  // prior claim
+  function finalize(code){ codeBox.style.display='block'; codeBox.textContent=code; copyBtn.style.display='inline-block'; spinBtn.disabled=true; spun=true; }
   try{ const prior=localStorage.getItem(CLAIM_KEY); if(prior){ finalize(JSON.parse(prior).code||CODE_STD); } }catch(e){}
-  // spin
   spinBtn.addEventListener('click', ()=>{
-    if(selected===null || spun) return;
-    ensureLiveLock();
-    spun=true; spinBtn.disabled=true;
-    chooseLightning();
-    const winIdx=(Math.random()*37)|0;
-    const targetDeg = 360 - (360/N)*winIdx - (360/(N*2));
-    const turns = 6, total = turns*360 + targetDeg;
-    const start=performance.now(), dur=4200;
-    function anim(t){
-      const p=Math.min(1,(t-start)/dur), e=1-Math.pow(1-p,3);
-      slices.style.transform=`rotate(${e*total}deg)`;
-      if(p<1) requestAnimationFrame(anim);
-      else{
-        const lightningHit = lightning.some(l=>l.n===winIdx);
-        const win = (selected===winIdx);
-        let code='TRY-AGAIN-NEXT-TIME';
-        if(win && lightningHit) code=CODE_XL;
-        else if(win) code=CODE_STD;
+    if(selected===null || spun) return; ensureLiveLock(); spun=true; spinBtn.disabled=true; chooseLightning();
+    const winIdx=(Math.random()*37)|0; const targetDeg = 360 - (360/N)*winIdx - (360/(N*2));
+    const turns = 6, total = turns*360 + targetDeg; const start=performance.now(), dur=4200;
+    function anim(t){ const p=Math.min(1,(t-start)/dur), e=1-Math.pow(1-p,3); slices.style.transform=`rotate(${e*total}deg)`;
+      if(p<1) requestAnimationFrame(anim); else{
+        const lightningHit = lightning.some(l=>l.n===winIdx); const win = (selected===winIdx);
+        let code='TRY-AGAIN-NEXT-TIME'; if(win && lightningHit) code=CODE_XL; else if(win) code=CODE_STD;
         codeBox.style.display='block'; codeBox.textContent=code;
         if(win){ copyBtn.style.display='inline-block'; try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code, ts:Date.now(), n:selected, winIdx, lightning})); }catch(e){} }
-      }
-    }
+      } }
     requestAnimationFrame(anim);
   });
   copyBtn.addEventListener('click',()=>{ const t=codeBox.textContent.trim(); if(!t)return; navigator.clipboard.writeText(t).then(()=>{ copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy Code',1200);});});
 })();
 
-/* ========== GAME 2: BLACKJACK ========== */
-(function initBlackjack(){
+/* ---------- Blackjack ---------- */
+(function(){
   const CLAIM_KEY='live_blackjack_claimed_v1', CODE='LIVE-BJ-21';
   const dealerEl=document.getElementById('bj-dealerHand'), playerEl=document.getElementById('bj-playerHand');
   const dealerScore=document.getElementById('bj-dealerScore'), playerScore=document.getElementById('bj-playerScore'), statusEl=document.getElementById('bj-status');
   const dealBtn=document.getElementById('bj-dealBtn'), hitBtn=document.getElementById('bj-hitBtn'), standBtn=document.getElementById('bj-standBtn');
   const codeBox=document.getElementById('bj-codeBox'), copyBtn=document.getElementById('bj-copyBtn');
-
   let deck=[], dealer=[], player=[], inRound=false, dealerHidden=true;
 
   function makeDeck(){ const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K']; const suits=['♠','♥','♦','♣']; const d=[]; suits.forEach(s=>ranks.forEach(r=>d.push({r,s}))); for(let i=d.length-1;i>0;i--){const j=(Math.random()*(i+1))|0; [d[i],d[j]]=[d[j],d[i]];} return d; }
   function value(hand){ let sum=0, aces=0; hand.forEach(c=>{ if(c.r==='A'){aces++; sum+=1} else if(['K','Q','J','10'].includes(c.r)){sum+=10}else sum+=Number(c.r) }); while(aces>0 && sum+10<=21){ sum+=10; aces--; } return sum; }
   function cardEl(c){ const el=document.createElement('div'); el.className='bj-card'; if(!c){ el.classList.add('bj-down'); el.textContent=''; return el; } el.innerHTML=`<div>${c.r}</div>`; return el; }
-  function render(){
-    dealerEl.innerHTML=''; playerEl.innerHTML='';
-    dealer.forEach((c,i)=>dealerEl.appendChild(cardEl(i===0 && dealerHidden ? null : c)));
-    player.forEach(c=>playerEl.appendChild(cardEl(c)));
-    dealerScore.textContent = dealerHidden ? '??' : value(dealer);
-    playerScore.textContent = value(player);
-  }
-  function finalize(code){
-    codeBox.style.display='inline-block'; codeBox.textContent=code; copyBtn.style.display='inline-block';
-    hitBtn.disabled=true; standBtn.disabled=true; dealBtn.disabled=true; dealerHidden=false; render();
-  }
-  // prior claim
+  function render(){ dealerEl.innerHTML=''; playerEl.innerHTML=''; dealer.forEach((c,i)=>dealerEl.appendChild(cardEl(i===0 && dealerHidden ? null : c))); player.forEach(c=>playerEl.appendChild(cardEl(c))); dealerScore.textContent = dealerHidden ? '??' : value(dealer); playerScore.textContent = value(player); }
+  function finalize(code){ codeBox.style.display='inline-block'; codeBox.textContent=code; copyBtn.style.display='inline-block'; hitBtn.disabled=true; standBtn.disabled=true; dealBtn.disabled=true; dealerHidden=false; render(); }
   try{ const prior=localStorage.getItem(CLAIM_KEY); if(prior){ finalize(JSON.parse(prior).code||CODE); } }catch(e){}
-  // actions
-  function deal(){
-    ensureLiveLock();
-    deck = makeDeck(); dealer=[]; player=[]; dealerHidden=true; inRound=true;
-    player.push(deck.pop(), deck.pop()); dealer.push(deck.pop(), deck.pop());
-    statusEl.textContent='Hit or Stand';
-    hitBtn.disabled=false; standBtn.disabled=false; dealBtn.disabled=true;
-    render();
-    if(value(player)===21){ stand(); }
-  }
-  function hit(){
-    if(!inRound) return;
-    player.push(deck.pop()); render();
-    if(value(player)>21){ statusEl.textContent='Bust! Dealer wins'; end(false); }
-  }
-  function stand(){
-    if(!inRound) return;
-    dealerHidden=false; render();
-    while(value(dealer)<17){ dealer.push(deck.pop()); render(); }
-    const p=value(player), d=value(dealer);
-    if(p===d){ statusEl.textContent='Push'; end(false,true); return; }
-    const win = (d>21 || p>d);
-    statusEl.textContent = win ? 'You win!' : 'Dealer wins';
-    end(win);
-  }
-  function end(win,push=false){
-    inRound=false; hitBtn.disabled=true; standBtn.disabled=true; dealBtn.disabled=false;
-    if(win){ finalize(CODE); try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE, ts:Date.now()})); }catch(e){} }
-    else if(push){ /* allow redeal */ }
-    else { codeBox.style.display='inline-block'; codeBox.textContent='TRY-AGAIN-NEXT-TIME'; }
-  }
-  dealBtn.addEventListener('click',deal);
-  hitBtn.addEventListener('click',hit);
-  standBtn.addEventListener('click',stand);
+  function deal(){ ensureLiveLock(); deck = makeDeck(); dealer=[]; player=[]; dealerHidden=true; inRound=true; player.push(deck.pop(), deck.pop()); dealer.push(deck.pop(), deck.pop()); statusEl.textContent='Hit or Stand'; hitBtn.disabled=false; standBtn.disabled=false; dealBtn.disabled=true; render(); if(value(player)===21){ stand(); } }
+  function hit(){ if(!inRound) return; player.push(deck.pop()); render(); if(value(player)>21){ statusEl.textContent='Bust! Dealer wins'; end(false); } }
+  function stand(){ if(!inRound) return; dealerHidden=false; render(); while(value(dealer)<17){ dealer.push(deck.pop()); render(); } const p=value(player), d=value(dealer); if(p===d){ statusEl.textContent='Push'; end(false,true); return; } const win=(d>21||p>d); statusEl.textContent = win ? 'You win!' : 'Dealer wins'; end(win); }
+  function end(win,push=false){ inRound=false; hitBtn.disabled=true; standBtn.disabled=true; dealBtn.disabled=false; if(win){ finalize(CODE); try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE, ts:Date.now()})); }catch(e){} } else if(push){ /* allow redeal */ } else { codeBox.style.display='inline-block'; codeBox.textContent='TRY-AGAIN-NEXT-TIME'; } }
+  dealBtn.addEventListener('click',deal); hitBtn.addEventListener('click',hit); standBtn.addEventListener('click',stand);
   copyBtn.addEventListener('click',()=>{ const t=codeBox.textContent.trim(); if(!t)return; navigator.clipboard.writeText(t).then(()=>{ copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy Code',1200); });});
   render();
 })();
 
-/* ========== GAME 3: DRAGON TIGER ========== */
-(function initDragonTiger(){
+/* ---------- Dragon Tiger ---------- */
+(function(){
   const CLAIM_KEY='live_dt_claimed_v1', CODE='LIVE-DRAGON-TIGER';
   const statusEl=document.getElementById('dt-status'), dEl=document.getElementById('dt-dCard'), tEl=document.getElementById('dt-tCard');
   const codeBox=document.getElementById('dt-codeBox'), copyBtn=document.getElementById('dt-copyBtn');
   const btnD=document.getElementById('dt-pick-d'), btnT=document.getElementById('dt-pick-t');
-
   const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
   function draw(){ return ranks[(Math.random()*ranks.length)|0]; }
   function rv(r){ if(r==='A') return 1; if(['J','Q','K'].includes(r)) return 10+['J','Q','K'].indexOf(r)+1; return Number(r); }
   function finalize(code){ codeBox.style.display='block'; codeBox.textContent=code; copyBtn.style.display='inline-block'; }
-
-  // prior claim
   try{ const prior=localStorage.getItem(CLAIM_KEY); if(prior){ finalize(JSON.parse(prior).code||CODE); } }catch(e){}
-
   let picked=false;
   function go(side){
     if(picked) return; picked=true; ensureLiveLock();
     const d=draw(), t=draw();
     dEl.classList.remove('dt-down'); dEl.textContent=d;
     tEl.classList.remove('dt-down'); tEl.textContent=t;
-    const dv=rv(d), tv=rv(t);
-    const winSide = dv>tv ? 'dragon' : tv>dv ? 'tiger' : 'tie';
+    const dv=rv(d), tv=rv(t); const winSide = dv>tv ? 'dragon' : tv>dv ? 'tiger' : 'tie';
     if(winSide==='tie'){ statusEl.textContent='Tie — no voucher'; codeBox.style.display='block'; codeBox.textContent='TRY-AGAIN-NEXT-TIME'; return; }
     const win = (side===winSide);
     statusEl.textContent = win ? 'You win!' : 'You chose the other side';
@@ -421,42 +388,25 @@ function ensureLiveLock(){ if(getChoice()!=='live'){ setChoice('live'); updateRe
   copyBtn.addEventListener('click',()=>{ const t=codeBox.textContent.trim(); if(!t)return; navigator.clipboard.writeText(t).then(()=>{ copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy Code',1200);});});
 })();
 
-/* ========== GAME 4: CRAPS ========== */
-(function initCraps(){
+/* ---------- Craps ---------- */
+(function(){
   const CLAIM_KEY='live_craps_claimed_v1', CODE='LIVE-PASS-WIN';
   const betPass=document.getElementById('cr-betPass'), betDont=document.getElementById('cr-betDont'), rollBtn=document.getElementById('cr-rollBtn');
   const d1El=document.getElementById('cr-d1'), d2El=document.getElementById('cr-d2'), statusEl=document.getElementById('cr-status');
   const codeBox=document.getElementById('cr-codeBox'), copyBtn=document.getElementById('cr-copyBtn');
-
   let bet=null, point=null, resolved=false, comeOut=true;
   function finalize(code){ codeBox.style.display='block'; codeBox.textContent=code; copyBtn.style.display='inline-block'; }
-
-  // prior claim
   try{ const prior=localStorage.getItem(CLAIM_KEY); if(prior){ finalize(JSON.parse(prior).code||CODE); rollBtn.disabled=true; } }catch(e){}
-
-  function setBet(b){
-    if(bet) return;
-    ensureLiveLock();
-    bet=b; rollBtn.disabled=false; statusEl.textContent='Tap Roll';
-    betPass.disabled=true; betDont.disabled=true;
-  }
+  function setBet(b){ if(bet) return; ensureLiveLock(); bet=b; rollBtn.disabled=false; statusEl.textContent='Tap Roll'; betPass.disabled=true; betDont.disabled=true; }
   betPass.addEventListener('click',()=>setBet('pass'));
   betDont.addEventListener('click',()=>setBet('dont'));
-
   function roll(){
     if(resolved) return;
     const a=1+((Math.random()*6)|0), b=1+((Math.random()*6)|0), s=a+b;
     d1El.textContent=a; d2El.textContent=b;
-
     if(comeOut){
-      if(bet==='pass'){
-        if(s===7||s===11){ win(); return; }
-        if([2,3,12].includes(s)){ lose(); return; }
-      }else{ // don't pass
-        if([2,3].includes(s)){ win(); return; }
-        if([7,11].includes(s)){ lose(); return; }
-        if(s===12){ statusEl.textContent='Push on 12 — roll again'; return; }
-      }
+      if(bet==='pass'){ if(s===7||s===11){ win(); return; } if([2,3,12].includes(s)){ lose(); return; } }
+      else{ if([2,3].includes(s)){ win(); return; } if([7,11].includes(s)){ lose(); return; } if(s===12){ statusEl.textContent='Push on 12 — roll again'; return; } }
       point=s; comeOut=false; statusEl.textContent=`Point is ${point}. Roll until ${point} or 7.`;
     }else{
       if(s===point){ (bet==='pass') ? win() : lose(); }
@@ -466,8 +416,84 @@ function ensureLiveLock(){ if(getChoice()!=='live'){ setChoice('live'); updateRe
   }
   function win(){ resolved=true; statusEl.textContent='You win!'; finalize(CODE); try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE, ts:Date.now()})); }catch(e){} rollBtn.disabled=true; }
   function lose(){ resolved=true; statusEl.textContent='Lost this round'; codeBox.style.display='block'; codeBox.textContent='TRY-AGAIN-NEXT-TIME'; rollBtn.disabled=true; }
-
   rollBtn.addEventListener('click', roll);
+  copyBtn.addEventListener('click',()=>{ const t=codeBox.textContent.trim(); if(!t)return; navigator.clipboard.writeText(t).then(()=>{ copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy Code',1200);});});
+})();
+
+/* ---------- Baccarat Squeeze ---------- */
+(function(){
+  const CLAIM_KEY='live_bac_squeeze_claimed_v1';
+  const CODE_WIN='LIVE-BAC-WIN', CODE_LOSE='TRY-AGAIN-NEXT-TIME';
+  const betPlayer=document.getElementById('bc-betPlayer'), betBanker=document.getElementById('bc-betBanker'), dealBtn=document.getElementById('bc-dealBtn');
+  const pHand=document.getElementById('bc-pHand'), bHand=document.getElementById('bc-bHand'), pScore=document.getElementById('bc-pScore'), bScore=document.getElementById('bc-bScore');
+  const result=document.getElementById('bc-result'), codeBox=document.getElementById('bc-codeBox'), copyBtn=document.getElementById('bc-copyBtn');
+
+  const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], suits=['♠','♥','♦','♣'];
+  function rnd(a){ return a[(Math.random()*a.length)|0]; }
+  function val(r){ if(r==='A')return 1; if(['10','J','Q','K'].includes(r)) return 0; return Number(r); }
+
+  let bet=null, dealt=false, player=[], banker=[];
+  function dealCard(){ return { r: rnd(ranks), s: rnd(suits), shown:false, peel:0 }; }
+  function score(hand){ return (hand.reduce((t,c)=>t+val(c.r),0))%10; }
+
+  function renderHand(container, hand){
+    container.innerHTML='';
+    hand.forEach((c)=>{
+      const el=document.createElement('div'); el.className='bc-card'; if(c.shown) el.classList.add('show');
+      el.innerHTML=`<div class="bc-face">${c.r}${c.s}</div>
+        <div class="bc-cover"></div>
+        <div class="bc-corners">
+          <button class="bc-corner bc-tl" aria-label="Peel top-left"></button>
+          <button class="bc-corner bc-tr" aria-label="Peel top-right"></button>
+          <button class="bc-corner bc-bl" aria-label="Peel bottom-left"></button>
+          <button class="bc-corner bc-br" aria-label="Peel bottom-right"></button>
+        </div>`;
+      el.querySelectorAll('.bc-corner').forEach(btn=>btn.addEventListener('click',()=>{
+        if(c.shown) return;
+        if(!btn.classList.contains('off')){
+          btn.classList.add('off'); c.peel++;
+          if(c.peel>=3){ c.shown=true; el.classList.add('show'); updateScores(); maybeFinish(); }
+        }
+      }));
+      container.appendChild(el);
+    });
+  }
+  function updateScores(){
+    const ps = player.some(c=>c.shown) ? score(player) : '??';
+    const bs = banker.some(c=>c.shown) ? score(banker) : '??';
+    pScore.textContent = ps; bScore.textContent = bs;
+  }
+  function bothHandsShown(){ return player.every(c=>c.shown) && banker.every(c=>c.shown); }
+  function maybeFinish(){
+    if(!bothHandsShown()) return;
+    const ps=score(player), bs=score(banker);
+    const winner = ps>bs ? 'player' : bs>ps ? 'banker' : 'tie';
+    if(winner==='tie'){ result.textContent='Tie — no voucher'; codeBox.style.display='block'; codeBox.textContent='TRY-AGAIN-NEXT-TIME'; return; }
+    const win = (bet===winner);
+    result.textContent = win ? 'You win!' : (winner==='player'?'Player wins':'Banker wins');
+    if(win){ finalize(CODE_WIN); try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE_WIN, ts:Date.now()})); }catch(e){} }
+    else { codeBox.style.display='block'; codeBox.textContent=CODE_LOSE; }
+  }
+  function finalize(code){ codeBox.style.display='block'; codeBox.textContent=code; copyBtn.style.display='inline-block'; }
+
+  betPlayer.addEventListener('click', ()=> choose('player'));
+  betBanker.addEventListener('click', ()=> choose('banker'));
+  function choose(side){
+    if(bet) return; ensureLiveLock();
+    bet=side; dealBtn.disabled=false; result.textContent='Bet on ' + (side==='player'?'Player':'Banker') + ' — tap Deal';
+    betPlayer.disabled=true; betBanker.disabled=true;
+  }
+  dealBtn.addEventListener('click', ()=>{
+    if(dealt) return; dealt=true;
+    player = [dealCard(), dealCard()];
+    banker = [dealCard(), dealCard()];
+    renderHand(pHand, player); renderHand(bHand, banker);
+    result.textContent='Squeeze to reveal';
+  });
+
+  // Prior claim (after DOM + finalize exist)
+  try{ const prior=localStorage.getItem(CLAIM_KEY); if(prior){ finalize(JSON.parse(prior).code||CODE_WIN); } }catch(e){}
+
   copyBtn.addEventListener('click',()=>{ const t=codeBox.textContent.trim(); if(!t)return; navigator.clipboard.writeText(t).then(()=>{ copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy Code',1200);});});
 })();
 </script>
