@@ -73,14 +73,24 @@
 
 <script src="assets/common.js"></script>
 <script>
+/* Fallback if assets/common.js is missing */
+if (typeof window.getChoice !== 'function') { window.getChoice = () => {try{return localStorage.getItem('realm_choice')}catch(e){return null}} }
+if (typeof window.setChoice !== 'function') { window.setChoice = (v) => {try{localStorage.setItem('realm_choice',v)}catch(e){}} }
+
 const CLAIM_KEY='live_lightning_claimed_v1', CODE_STD='LIVE-LIGHT-WIN', CODE_XL='LIVE-LIGHT-XL';
-const prior=localStorage.getItem(CLAIM_KEY); if(prior){ finalize(JSON.parse(prior).code||CODE_STD); }
+
 const cc=getChoice(); if(cc && cc!=='live'){ alert('You already started Slot. Live is locked for this event.'); location.replace('index.html'); }
 
 /* Build number grid 0..36 */
 const pickGrid=document.getElementById('pickGrid');
 const reds=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
-let selected=null, spun=false;
+const slices=document.getElementById('slices'); const N=37;
+const lightBar=document.getElementById('lightBar');
+const spinBtn=document.getElementById('spinBtn'), codeBox=document.getElementById('codeBox'), copyBtn=document.getElementById('copyBtn');
+
+let selected=null, spun=false, lightning=[];
+
+/* grid buttons */
 for(let n=0;n<=36;n++){
   const b=document.createElement('button'); b.className='num ' + (n===0?'zero':(reds.has(n)?'red':'black')); b.textContent=n;
   b.addEventListener('click',()=>{
@@ -93,8 +103,7 @@ for(let n=0;n<=36;n++){
   pickGrid.appendChild(b);
 }
 
-/* Wheel slices (simple 0..36 order for visuals) */
-const slices=document.getElementById('slices'); const N=37;
+/* wheel slices visual (0..36 order) */
 for(let i=0;i<N;i++){
   const deg=(360/N)*i;
   const el=document.createElement('div');
@@ -106,11 +115,9 @@ for(let i=0;i<N;i++){
   slices.appendChild(el);
 }
 
-/* Lightning picks */
-const lightBar=document.getElementById('lightBar');
-let lightning=[];
+/* lightning picks */
 function chooseLightning(){
-  const how=2+((Math.random()*2)|0); // 2–3
+  const how=2+((Math.random()*2)|0);
   const picks=new Set();
   while(picks.size<how){ picks.add((Math.random()*37)|0); }
   const mults=[50,100,200,150,300];
@@ -122,44 +129,57 @@ function chooseLightning(){
   });
 }
 
-/* Spin */
-const spinBtn=document.getElementById('spinBtn'), codeBox=document.getElementById('codeBox'), copyBtn=document.getElementById('copyBtn');
-const priorClaim=localStorage.getItem(CLAIM_KEY); if(priorClaim){ spinBtn.disabled=true; }
+/* spin */
 function spin(){
   if(selected===null || spun) return;
   setChoice('live');
   spun=true; spinBtn.disabled=true;
 
-  chooseLightning(); // show lightning before spin
+  chooseLightning();
 
-  const winIdx=(Math.random()*37)|0; // winning number
+  const winIdx=(Math.random()*37)|0;
   const targetDeg = 360 - (360/N)*winIdx - (360/(N*2));
-  const turns = 6;
-  const total = turns*360 + targetDeg;
-
+  const turns = 6, total = turns*360 + targetDeg;
   const start=performance.now(), dur=4200;
+
   function anim(t){
     const p=Math.min(1,(t-start)/dur), e=1-Math.pow(1-p,3);
     slices.style.transform=`rotate(${e*total}deg)`;
     if(p<1) requestAnimationFrame(anim);
-    else{
+    else {
       const lightningHit = lightning.some(l=>l.n===winIdx);
       const win = (selected===winIdx);
       let code='TRY-AGAIN-NEXT-TIME';
       if(win && lightningHit) code=CODE_XL;
       else if(win) code=CODE_STD;
+
       codeBox.style.display='block'; codeBox.textContent = code;
-      if(win){ copyBtn.style.display='inline-block'; localStorage.setItem(CLAIM_KEY, JSON.stringify({code, ts:Date.now(), n:selected, winIdx, lightning})); }
+      if(win){
+        copyBtn.style.display='inline-block';
+        try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code, ts:Date.now(), n:selected, winIdx, lightning})); }catch(e){}
+      }
     }
   }
   requestAnimationFrame(anim);
 }
 spinBtn.addEventListener('click', spin);
 
+/* finalize helper for prior claims */
 function finalize(code){
   codeBox.style.display='block'; codeBox.textContent=code; copyBtn.style.display='inline-block'; spinBtn.disabled=true; spun=true;
 }
-copyBtn.addEventListener('click',()=>{ const t=codeBox.textContent.trim(); if(!t)return; navigator.clipboard.writeText(t).then(()=>{ copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy Code',1200);});});
+
+/* PRIOR CLAIM check */
+try{
+  const prior=localStorage.getItem(CLAIM_KEY);
+  if(prior){ finalize(JSON.parse(prior).code||CODE_STD); }
+}catch(e){}
+
+/* copy */
+copyBtn.addEventListener('click',()=>{
+  const t=codeBox.textContent.trim(); if(!t)return;
+  navigator.clipboard.writeText(t).then(()=>{ copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy Code',1200);});
+});
 </script>
 </body>
 </html>
