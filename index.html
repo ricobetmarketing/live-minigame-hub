@@ -1,46 +1,136 @@
-<!doctype html> 
-<html lang="en"> 
-<head> 
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Mini Game Hub</title>
-  <meta name="description" content="A fun mini game hub built with Phaser and Vite" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
-  <style>
-    html,body {
-      height:100%;
-      margin:0;
-      background:#090a16;
-      color:#eef4ff;
-      font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-    }
-    #app {
-      display:grid;
-      place-items:center;
-      height:100%;
-    }
-    .hud {
-      position:fixed;
-      inset:auto 12px 12px auto;
-      background:rgba(0,0,0,.45);
-      backdrop-filter:blur(8px);
-      padding:8px 12px;
-      border-radius:12px;
-    }
-    .btn {
-      cursor:pointer;
-      border:none;
-      border-radius:12px;
-      padding:10px 14px;
-      font-weight:700;
-    }
-  </style>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Live Games — Hub</title>
+<style>
+  :root{
+    --ink:#eaf2ff; --mut:#9fb0d9; --g1:#71e1ff; --g2:#25c3ff;
+    --card:#1b2a56; --card2:#0f1832;
+  }
+  *{box-sizing:border-box} html,body{height:100%}
+  body{
+    margin:0; color:var(--ink);
+    background:radial-gradient(1200px 800px at 70% -10%, #18244d 0%, #0a0f1e 55%, #05070d 100%);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+    display:flex; align-items:center; justify-content:center; padding:18px;
+  }
+  .wrap{width:min(1100px,96vw)}
+  header{ text-align:center; margin-bottom:16px }
+  h1{margin:0 0 6px; font-size:clamp(22px,5vw,36px); font-weight:900; text-transform:uppercase;
+     background:linear-gradient(to right,var(--g1),var(--g2)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent}
+  p.sub{margin:0; color:var(--mut)}
+  .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:16px}
+  @media (max-width:900px){ .grid{grid-template-columns:1fr 1fr} }
+  @media (max-width:640px){ .grid{grid-template-columns:1fr} }
+
+  .card{
+    position:relative; border-radius:18px; padding:16px; text-decoration:none; color:inherit;
+    background:linear-gradient(180deg,var(--card),var(--card2));
+    outline:1px solid rgba(255,255,255,.08); box-shadow:0 16px 60px rgba(0,0,0,.55);
+    display:flex; flex-direction:column; gap:8px; min-height:150px;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .card:hover{ transform:translateY(-3px); box-shadow:0 22px 70px rgba(0,0,0,.6) }
+  .title{font-weight:900}
+  .status{font-size:12px; color:var(--mut)}
+  .ctaRow{margin-top:auto; display:flex; gap:10px; align-items:center}
+  .btn{border:0; border-radius:12px; padding:8px 12px; font-weight:900; cursor:pointer}
+  .primary{background:linear-gradient(to right,var(--g1),var(--g2)); color:#061018}
+  .ghost{background:#2b2b2b; color:#fff}
+
+  .panel{
+    margin-top:14px; padding:12px; border-radius:14px; background:rgba(0,0,0,.28);
+    outline:1px solid rgba(255,255,255,.08); color:var(--mut); font-size:13px
+  }
+  code{background:#0a0d1a; padding:2px 6px; border-radius:8px; outline:1px dashed rgba(160,220,255,.25); color:#cfe5ff}
+</style>
 </head>
 <body>
-  <div id="app"></div>
-  <div class="hud">
-    <button id="claim" class="btn">Claim reward</button>
+  <div class="wrap">
+    <header>
+      <h1>Live Games Hub</h1>
+      <p class="sub">Pick a game. First action will lock you to <b>Live</b> (localStorage). Use the test panel to clear.</p>
+    </header>
+
+    <div class="grid" id="cards">
+      <!-- Cards are injected by JS so we can reflect statuses -->
+    </div>
+
+    <div class="panel">
+      <div><b>Realm lock:</b> <span id="realmState">—</span></div>
+      <div style="margin-top:8px; display:flex; gap:10px; flex-wrap:wrap">
+        <button class="btn ghost" id="clearLock">Reset realm lock</button>
+        <button class="btn ghost" id="clearClaims">Reset all claims</button>
+      </div>
+      <div style="margin-top:8px">For testing only — this just clears <code>localStorage</code>.</div>
+    </div>
   </div>
-  <script type="module" src="/src/main.js"></script>
+
+<script>
+/* Minimal lock helpers (also safe if you later add assets/common.js) */
+function getChoice(){ try{return localStorage.getItem('realm_choice')}catch(e){return null} }
+function setChoice(v){ try{localStorage.setItem('realm_choice', v)}catch(e){} }
+
+/* Game registry (href must match your filenames) */
+const GAMES = [
+  {key:'live_bac_squeeze_claimed_v1', title:'Baccarat Squeeze (Lite)', href:'live-bac-squeeze.html', blurb:'Peel corners & reveal. Mod-10 wins.'},
+  {key:'live_lightning_claimed_v1',   title:'Lightning Roulette Pick',  href:'live-lightning.html',    blurb:'Pick 0–36, lightning strikes, spin.'},
+  {key:'live_blackjack_claimed_v1',   title:'Mini Blackjack',           href:'live-blackjack.html',    blurb:'Hit / Stand. Beat the dealer.'},
+  {key:'live_dt_claimed_v1',          title:'Dragon Tiger',             href:'live-dragon-tiger.html', blurb:'Pick a side. One-card showdown.'},
+  {key:'live_craps_claimed_v1',       title:'Mini Craps — Pass Line',   href:'live-craps.html',        blurb:'Pass vs Don’t. Point cycle.'},
+];
+
+/* Build cards with status + view/reset buttons */
+const wrap = document.getElementById('cards');
+function claimState(k){
+  try{ return !!localStorage.getItem(k); }catch(e){ return false; }
+}
+function render(){
+  wrap.innerHTML='';
+  GAMES.forEach(g=>{
+    const claimed = claimState(g.key);
+    const a = document.createElement('a');
+    a.className='card'; a.href=g.href;
+    a.innerHTML = `
+      <div class="title">${g.title}</div>
+      <div class="status">${g.blurb}</div>
+      <div class="status">Claim: <b style="color:${claimed?'#71e1ff':'#9fb0d9'}">${claimed?'Claimed':'Not claimed'}</b></div>
+      <div class="ctaRow">
+        <span class="btn primary">Play</span>
+        <button class="btn ghost" data-reset="${g.key}" type="button">Reset</button>
+      </div>
+    `;
+    wrap.appendChild(a);
+  });
+
+  // attach reset handlers (stop link navigation)
+  wrap.querySelectorAll('button[data-reset]').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.preventDefault(); e.stopPropagation();
+      const k = btn.getAttribute('data-reset');
+      try{ localStorage.removeItem(k); }catch(e){}
+      render();
+    });
+  });
+
+  // realm state
+  const rs = document.getElementById('realmState');
+  const cur = getChoice();
+  rs.textContent = cur ? `Locked to: ${cur.toUpperCase()}` : 'No lock';
+}
+render();
+
+/* Controls */
+document.getElementById('clearLock').addEventListener('click', ()=>{
+  try{ localStorage.removeItem('realm_choice'); }catch(e){}
+  render();
+});
+document.getElementById('clearClaims').addEventListener('click', ()=>{
+  GAMES.forEach(g=>{ try{ localStorage.removeItem(g.key); }catch(e){} });
+  render();
+});
+</script>
 </body>
 </html>
