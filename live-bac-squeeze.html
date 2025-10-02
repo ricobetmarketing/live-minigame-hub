@@ -3,13 +3,12 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>Live — Premier Blackjack (Real Table)</title>
+<title>Live — Baccarat Squeeze (Manual Peel)</title>
 <style>
   :root{
     --ink:#eaf2ff; --mut:#9fb0d9; --g1:#71e1ff; --g2:#25c3ff;
-    --felt1:#154a44; --felt2:#0e332f;
-    --gold:#ffd86a; --shadow:rgba(0,0,0,.55);
-    --seatOn:#ffffff;
+    --felt1:#184d57; --felt2:#0f2f35; --gold:#ffd86a; --shadow:rgba(0,0,0,.55);
+    --pcol:#6cf5d4; --bcol:#ff9aa5; --tcol:#ffe39a;
   }
   *{box-sizing:border-box} html,body{height:100%}
   body{
@@ -34,69 +33,71 @@
   .toggle{border:0;border-radius:12px;padding:8px 12px;font-weight:900;cursor:pointer;background:#2b2b2b;color:#fff}
   .note{font-size:12px; opacity:.9; white-space:nowrap}
 
-  /* felt (FIX: real height so nothing is clipped) */
+  /* felt */
   .felt{
     position:relative;
     border-radius:22px;
-    padding:18px 18px 160px;                /* more room at bottom for seats/controls */
+    padding:18px 18px 168px;
     background:radial-gradient(closest-side,var(--felt1),var(--felt2));
     outline:1px solid rgba(255,255,255,.08);
     box-shadow:inset 0 0 70px rgba(0,0,0,.6), 0 0 60px rgba(113,225,255,.18), 0 0 80px rgba(192,107,255,.16);
     overflow:hidden;
-    min-height: clamp(600px, 76vh, 880px); /* 👈 keeps the whole table visible */
+    min-height: clamp(640px, 78vh, 900px);
     aspect-ratio: 16 / 9;
   }
   #fx{ position:absolute; inset:0; pointer-events:none; z-index:2 }
-  .feltArt{ position:absolute; inset:0; pointer-events:none; opacity:.65; filter:drop-shadow(0 3px 10px rgba(0,0,0,.45)); z-index:0 }
+
+  /* table text */
+  .feltArt{ position:absolute; inset:0; pointer-events:none; opacity:.75; filter:drop-shadow(0 3px 10px rgba(0,0,0,.45)); z-index:0 }
   .feltArt text{ font:900 18px/1 ui-sans-serif,system-ui,Segoe UI,Roboto,Arial; letter-spacing:2.2px; fill:#eaf2ff }
 
-  /* dealer area */
-  .dealerArea{ position:absolute; left:0; right:0; top:70px; display:flex; align-items:center; justify-content:center; gap:14px; z-index:1 }
-  .dealerLabel{
-    position:absolute; top:-38px; left:50%; transform:translateX(-50%);
-    background:rgba(0,0,0,.32); border:1px solid rgba(255,255,255,.12); padding:6px 10px; border-radius:10px; font-weight:900;
-    pointer-events:none; z-index:1;
-  }
+  /* hands */
+  .hand{ position:absolute; top:34px; display:flex; gap:12px }
+  .hand.player{ left:60px } .hand.banker{ right:60px }
+  .tot{ position:absolute; top:6px; font:900 14px/1 ui-sans-serif; color:var(--gold); text-shadow:0 2px 6px rgba(0,0,0,.6) }
+  .tot.p{ left:60px } .tot.b{ right:60px }
 
-  /* seats */
-  .seats{
-    position:absolute; left:0; right:0;
-    bottom:140px;                          /* FIX: lifted above controls */
-    display:grid; grid-template-columns:repeat(4,1fr);
-    gap:20px; padding:0 80px; z-index:1;
+  /* betting areas */
+  .areas{ position:absolute; inset:140px 70px 220px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:28px; z-index:1 }
+  .area{
+    position:relative; border-radius:26px; display:grid; place-items:center;
+    background:radial-gradient(closest-side, rgba(255,255,255,.05), rgba(255,255,255,.0) 70%);
+    outline:2px dashed rgba(255,255,255,.15); padding:16px;
   }
-  .seat{ position:relative; height:150px; display:grid; place-items:center; cursor:pointer }
-  .ring{
-    position:absolute; inset:auto 0 12px 0; margin:auto; width:170px; height:170px; border-radius:50%;
-    box-shadow:inset 0 0 0 5px rgba(255,255,255,.12), 0 12px 24px rgba(0,0,0,.4);
-    background:radial-gradient(closest-side, rgba(255,255,255,.06), rgba(255,255,255,0) 60%);
-    pointer-events:auto;
-  }
-  .ring.on{ box-shadow:inset 0 0 0 6px var(--seatOn), 0 16px 40px rgba(0,0,0,.55) }
-  .seatNum{ position:absolute; inset:auto 0 58px 0; margin:auto; width:72px; height:72px; border-radius:50%; display:grid; place-items:center; font-weight:900; color:#0b1111; background:#eaeaea; border:6px solid #c0c9c5 }
-  .seatNum.on{ background:#fff; border-color:#fff }
-  .betStack{ position:absolute; inset:auto 0 26px 0; margin:auto; width:96px; height:72px; pointer-events:none }
-  .betAmt{ position:absolute; left:50%; transform:translateX(-50%); bottom:-22px; font:900 12px/1 ui-sans-serif; color:#eaf2ff; text-shadow:0 2px 6px rgba(0,0,0,.6) }
+  .area h2{ margin:0; font:900 22px/1.1 ui-sans-serif; letter-spacing:1px }
+  .area small{ opacity:.8; font-weight:700 }
+  .banker h2{ color:#ffc6c6 } .player h2{ color:#c6ffea } .tie h2{ color:#ffe39a }
 
-  /* player hand containers */
-  .hand{ position:absolute; top:-18px; display:flex; gap:10px }
-  .handPlayer{ left:18px }
+  .betSpot{ position:absolute; bottom:18px; left:50%; transform:translateX(-50%); width:150px; height:150px; border-radius:50%;
+            box-shadow:inset 0 0 0 6px rgba(255,255,255,.15); background:radial-gradient(circle, rgba(255,255,255,.08), rgba(255,255,255,0) 65%); cursor:pointer }
+  .amt{ position:absolute; bottom:-22px; left:50%; transform:translateX(-50%); font:900 12px/1 ui-sans-serif; color:#eaf2ff; text-shadow:0 2px 6px rgba(0,0,0,.6) }
 
-  /* cards 3D */
-  .playing-card{ width:92px; height:128px; border-radius:14px; position:relative; transform:translateZ(0); outline:2px solid #e5ecff; box-shadow:0 16px 28px rgba(0,0,0,.4) }
-  .card3d{ position:absolute; inset:0; border-radius:14px; transform-style:preserve-3d; backface-visibility:hidden; transition:transform .48s ease }
-  .sideFace{ position:absolute; inset:0; display:grid; place-items:center; border-radius:14px; backface-visibility:hidden; -webkit-backface-visibility:hidden; font-weight:900 }
-  .back{ background:linear-gradient(180deg,#0e1a3a,#0a1329); color:#9fb0d9; font-size:28px; transform:rotateY(0deg) }
-  .front{ background:radial-gradient(240px 160px at 50% -20%,#fff,#e9eefc 40%,#c8d4f3 100%); color:#1a2050; font-size:26px; transform:rotateY(180deg) }
-  .reveal .card3d{ transform:rotateY(180deg) }
+  /* cards (manual peel) */
+  .playing-card{ position:relative; width:92px; height:128px; border-radius:14px; outline:2px solid #e5ecff; box-shadow:0 16px 28px rgba(0,0,0,.4); overflow:hidden }
+  .face{ position:absolute; inset:0; display:grid; place-items:center; font-weight:900; color:#1a2050; background:radial-gradient(240px 160px at 50% -20%,#fff,#e9eefc 40%,#c8d4f3 100%); filter:blur(3px) }
+  .cover{ position:absolute; inset:0; background:linear-gradient(180deg,#0e1a3a,#0a1329); color:#9fb0d9; display:grid; place-items:center; font-size:28px }
+  .playing-card.show .face{ filter:none; transition:filter .2s }
+  .playing-card.show .cover{ display:none }
+
+  .corners{ position:absolute; inset:0; pointer-events:none }
+  .corner{ position:absolute; width:44px; height:44px; background:rgba(10,16,30,.94); outline:1px solid rgba(255,255,255,.08); opacity:.95; pointer-events:auto }
+  .corner.off{ opacity:0; pointer-events:none; transition:opacity .15s }
+  .tl{left:0;top:0;clip-path:polygon(0 0,100% 0,0 100%)} .tr{right:0;top:0;clip-path:polygon(0 0,100% 0,100% 100%)} 
+  .bl{left:0;bottom:0;clip-path:polygon(0 0,100% 100%,0 100%)} .br{right:0;bottom:0;clip-path:polygon(100% 0,100% 100%,0 100%)}
+
+  .glow{ position:absolute; inset:-6px; border-radius:16px; box-shadow:0 0 0 3px rgba(255,255,255,.28), 0 0 24px rgba(255,255,255,.5); pointer-events:none; display:none }
+  .playing-card.active .glow{ display:block }
+
   .deal-in{ opacity:0; transform:translateY(-30px) scale(.96); animation:deal .42s cubic-bezier(.2,.8,.2,1) forwards }
   @keyframes deal{to{opacity:1; transform:translateY(0) scale(1)}}
 
-  /* chip tray */
+  /* chip tray & chips */
   .tray{ position:absolute; left:24px; bottom:16px; display:flex; gap:10px; align-items:flex-end; z-index:3 }
   .chipSel{ width:56px; height:56px; border-radius:50%; display:grid; place-items:center; font-weight:900; color:#091020; background:radial-gradient(circle at 35% 35%, #fff, #f7f7f7 40%, #ddd 70%, #bbb 100%); border:6px solid #9be2ff; cursor:pointer; box-shadow:0 12px 28px rgba(0,0,0,.45); transition:transform .12s, box-shadow .12s }
   .chipSel.sel{ transform:translateY(-4px) scale(1.05); box-shadow:0 16px 40px rgba(0,0,0,.6) }
   .chipSel[data-v="5"]{ border-color:#7dfcc8 } .chipSel[data-v="25"]{ border-color:#ffd86a } .chipSel[data-v="100"]{ border-color:#ff9abb }
+  .chip{ position:absolute; left:50%; transform:translateX(-50%); width:34px; height:34px; border-radius:50%; display:grid; place-items:center; font:900 11px ui-sans-serif; color:#091020; background:radial-gradient(circle at 35% 35%, #fff, #f5f5f5 40%, #ddd 70%, #bbb 100%); box-shadow:0 8px 18px rgba(0,0,0,.35); animation:chipDrop .18s ease }
+  @keyframes chipDrop{ from{ transform:translate(-50%,10px); opacity:.6 } to{ transform:translate(-50%,0); opacity:1 } }
 
   /* controls */
   .controls{ position:absolute; left:50%; bottom:12px; transform:translateX(-50%); display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:center; z-index:3 }
@@ -105,19 +106,14 @@
   .btn:disabled{opacity:.55}
   .bank{ background:rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:8px 10px; color:#cfe0ff }
 
-  /* banner + voucher */
+  /* banner + voucher + bead road */
   .banner{ position:absolute; right:14px; top:14px; background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:8px 12px; font-weight:900; z-index:3 }
   .code{display:none; position:absolute; right:14px; bottom:16px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.5px; padding:10px 12px; border-radius:12px; background:#0a0d1a; outline:1px dashed rgba(160,220,255,.35); z-index:3}
   .copy{display:none;margin-left:8px;border:0;border-radius:10px;padding:8px 10px;font-weight:900;background:#2b2b2b;color:#fff; position:absolute; right:14px; bottom:16px; transform:translateY(46px); z-index:3}
 
-  /* insurance prompt */
-  .insBox{ position:absolute; left:50%; top:46%; transform:translate(-50%,-50%); background:rgba(0,0,0,.6); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:14px 16px; display:none; z-index:4; backdrop-filter: blur(2px) }
-  .insBox.show{ display:block }
-  .insBox h3{ margin:0 0 8px; font-size:16px }
-  .insRow{ display:flex; gap:10px; justify-content:center }
-
-  /* chip pile animation */
-  @keyframes chipDrop{ from{ transform:translate(-50%,10px); opacity:.6 } to{ transform:translate(-50%,0); opacity:1 } }
+  .bead{ position:absolute; left:14px; top:14px; width:170px; background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:8px; display:grid; grid-template-columns:repeat(6,1fr); gap:6px; z-index:3 }
+  .cell{ width:20px; height:20px; border-radius:50%; display:grid; place-items:center; font:900 10px/1 ui-sans-serif; color:#0b1111 }
+  .cP{ background:var(--pcol) } .cB{ background:var(--bcol) } .cT{ background:var(--tcol) }
 </style>
 </head>
 <body>
@@ -126,50 +122,40 @@
     <div class="card">
       <div class="top">
         <div class="shoe"><div style="font-weight:800">Shoe</div><div class="bar"><i id="shoeFill"></i></div><div id="shoeLeft" style="font-size:12px;min-width:70px;text-align:right">—</div></div>
-        <div class="note">Blackjack pays <b>3 to 2</b> — Insurance pays <b>2 to 1</b> — Dealer must stand on all 17</div>
+        <div class="note">Banker pays <b>0.95 : 1</b> • Player pays <b>1 : 1</b> • Tie pays <b>8 : 1</b></div>
         <button id="soundBtn" class="toggle">🔊 Sound: On</button>
       </div>
 
       <div class="felt" id="felt">
         <canvas id="fx"></canvas>
 
-        <!-- curved felt text -->
+        <!-- table label -->
         <svg class="feltArt" viewBox="0 0 1200 700" preserveAspectRatio="none" aria-hidden="true">
-          <defs>
-            <path id="arc1" d="M200,340 A420,260 0 0,1 1000,340" />
-            <path id="arc2" d="M250,390 A380,220 0 0,1 950,390" />
-          </defs>
-          <text style="font-size:26px"><textPath href="#arc1" startOffset="50%" text-anchor="middle">PREMIER BLACKJACK</textPath></text>
-          <text><textPath href="#arc2" startOffset="50%" text-anchor="middle">DEALER MUST STAND ON ALL 17</textPath></text>
+          <defs><path id="arc1" d="M200,360 A420,260 0 0,1 1000,360"/></defs>
+          <text style="font-size:26px"><textPath href="#arc1" startOffset="50%" text-anchor="middle">BACCARAT — SQUEEZE</textPath></text>
         </svg>
 
-        <!-- dealer -->
-        <div class="dealerArea">
-          <div class="dealerLabel">Dealer</div>
-          <div id="dealerHand" class="hand"></div>
-        </div>
+        <!-- totals -->
+        <div class="tot p" id="pTot">Player: —</div>
+        <div class="tot b" id="bTot">Banker: —</div>
 
-        <!-- seats -->
-        <div class="seats" id="seats">
-          <div class="seat" data-seat="1">
-            <div class="ring"></div><div class="seatNum">1</div>
-            <div class="betStack"><div class="betAmt">$0</div></div>
-            <div class="hand handPlayer" id="hand-1"></div>
+        <!-- hands -->
+        <div class="hand player" id="pHand"></div>
+        <div class="hand banker" id="bHand"></div>
+
+        <!-- betting areas -->
+        <div class="areas">
+          <div class="area player">
+            <h2>PLAYER</h2><small>1 : 1</small>
+            <div class="betSpot" id="spotPlayer"></div><div class="amt" id="amtPlayer">$0</div>
           </div>
-          <div class="seat" data-seat="2">
-            <div class="ring"></div><div class="seatNum">2</div>
-            <div class="betStack"><div class="betAmt">$0</div></div>
-            <div class="hand handPlayer" id="hand-2"></div>
+          <div class="area tie">
+            <h2>TIE</h2><small>8 : 1</small>
+            <div class="betSpot" id="spotTie"></div><div class="amt" id="amtTie">$0</div>
           </div>
-          <div class="seat" data-seat="3">
-            <div class="ring"></div><div class="seatNum">3</div>
-            <div class="betStack"><div class="betAmt">$0</div></div>
-            <div class="hand handPlayer" id="hand-3"></div>
-          </div>
-          <div class="seat" data-seat="4">
-            <div class="ring"></div><div class="seatNum">4</div>
-            <div class="betStack"><div class="betAmt">$0</div></div>
-            <div class="hand handPlayer" id="hand-4"></div>
+          <div class="area banker">
+            <h2>BANKER</h2><small>0.95 : 1</small>
+            <div class="betSpot" id="spotBanker"></div><div class="amt" id="amtBanker">$0</div>
           </div>
         </div>
 
@@ -184,29 +170,16 @@
         <!-- controls -->
         <div class="controls">
           <button class="btn" id="dealBtn" disabled>Deal</button>
-          <button class="btn" id="hitBtn" disabled>Hit</button>
-          <button class="btn ghost" id="standBtn" disabled>Stand</button>
-          <button class="btn ghost" id="doubleBtn" disabled>Double</button>
           <button class="btn ghost" id="rebetBtn" disabled>Rebet</button>
-          <button class="btn ghost" id="clearBtn" disabled>Clear Table</button>
+          <button class="btn ghost" id="clearBtn" disabled>Clear</button>
           <button class="btn ghost" id="reshuffleBtn" style="display:none">Reshuffle Shoe</button>
           <div class="bank">Balance: <b id="bal">$1000</b> • Total Bet: <b id="bet">$0</b> • Last Result: <b id="last">$0</b></div>
         </div>
 
-        <!-- insurance -->
-        <div class="insBox" id="insBox">
-          <h3>Dealer shows Ace — Insurance?</h3>
-          <div style="text-align:center;margin-bottom:8px">Up to half your bet. Pays 2:1 if dealer has blackjack.</div>
-          <div class="insRow">
-            <button class="btn" id="insYes">Insure</button>
-            <button class="btn ghost" id="insNo">No Thanks</button>
-          </div>
-        </div>
-
-        <!-- banner + voucher -->
+        <!-- banner + voucher + bead road -->
         <div class="banner" id="banner">Place your bet</div>
-        <div class="code" id="codeBox">LIVE-BJ-XXXX</div>
-        <button class="copy" id="copyBtn">Copy</button>
+        <div class="bead" id="bead"></div>
+        <div class="code" id="codeBox">LIVE-BAC-XXXX</div><button class="copy" id="copyBtn">Copy</button>
       </div>
     </div>
   </div>
@@ -224,7 +197,7 @@ if(typeof getChoice!=='function') window.getChoice=()=>{try{return localStorage.
 if(typeof setChoice!=='function') window.setChoice=v=>{try{localStorage.setItem('realm_choice',v)}catch(e){}};
 const r=getChoice(); if(r && r!=='live'){ alert('You already started Slot. Live is locked for this event.'); location.replace('index.html'); }
 
-const CLAIM_KEY='live_blackjack_pro_claimed_v1', CODE='LIVE-BJ-21';
+const CLAIM_KEY='live_bac_squeeze_manual_claimed_v1', CODE='LIVE-BAC-WIN';
 
 /* AUDIO */
 let soundOn=true; const sDeal=g('sDeal'), sFlip=g('sFlip'), sWin=g('sWin'), sChip=g('sChip'), sShuffle=g('sShuffle');
@@ -238,25 +211,26 @@ function resizeFX(){ fx.width=fx.parentElement.clientWidth; fx.height=fx.parentE
 addEventListener('resize',resizeFX); addEventListener('orientationchange',()=>setTimeout(resizeFX,200)); resizeFX();
 function confetti(){ const p=[]; for(let i=0;i<160;i++) p.push({x:fx.width/2,y:120+Math.random()*20,vx:(Math.random()-0.5)*6,vy:(Math.random()-0.5)*5,life:140+Math.random()*60,r:2+Math.random()*3,h:Math.random()*360}); (function loop(){ ctx.clearRect(0,0,fx.width,fx.height); p.forEach(o=>{o.x+=o.vx;o.y+=o.vy;o.vy+=0.06;o.life--;ctx.globalAlpha=Math.max(0,o.life/200);ctx.fillStyle=`hsl(${o.h},100%,60%)`;ctx.fillRect(o.x,o.y,o.r,o.r);}); ctx.globalAlpha=1; if(p.some(o=>o.life>0)) requestAnimationFrame(loop); })(); }
 
-/* DOM helpers */
+/* helpers */
 function g(id){return document.getElementById(id)}
+function money(n){ return '$'+n.toFixed(2).replace(/\.00$/,'') }
+
+/* DOM */
+const pHand=g('pHand'), bHand=g('bHand'), banner=g('banner'), bead=g('bead');
 const shoeFill=g('shoeFill'), shoeLeft=g('shoeLeft');
-const dealerHand=g('dealerHand'), banner=g('banner');
-const dealBtn=g('dealBtn'), hitBtn=g('hitBtn'), standBtn=g('standBtn'), doubleBtn=g('doubleBtn'), rebetBtn=g('rebetBtn'), clearBtn=g('clearBtn'), reshuffleBtn=g('reshuffleBtn');
+const pTot=g('pTot'), bTot=g('bTot');
 const balEl=g('bal'), betEl=g('bet'), lastEl=g('last');
+const dealBtn=g('dealBtn'), rebetBtn=g('rebetBtn'), clearBtn=g('clearBtn'), reshuffleBtn=g('reshuffleBtn');
 const codeBox=g('codeBox'), copyBtn=g('copyBtn');
-const insBox=g('insBox'), insYes=g('insYes'), insNo=g('insNo');
 
-/* STATE */
+/* state */
 let balance=1000, lastRes=0, currentChip=1;
-let activeSeat=1;
-let bets=[0,0,0,0,0]; // 1..4 for seats
-let insurances=[0,0,0,0,0];
-let hands={}; // seat -> array of cards
-let dealer=[], hiddenDown=null; // dealer[1] is down card
-let inRound=false, firstAction=true, shoe=[], shoeSize=0, cutLine=52, cutReached=false;
+let bets={player:0, banker:0, tie:0}, lastBets={player:0, banker:0, tie:0};
+let shoe=[], shoeSize=0, cutLine=52, cutReached=false;
+let inRound=false, queue=[], P=[], B=[];
+let beadRoad=[];
 
-/* CHIPS */
+/* chips */
 document.querySelectorAll('.chipSel').forEach(ch=>{
   ch.addEventListener('click',()=>{
     document.querySelectorAll('.chipSel').forEach(x=>x.classList.remove('sel'));
@@ -264,215 +238,252 @@ document.querySelectorAll('.chipSel').forEach(ch=>{
     currentChip = Number(ch.dataset.v);
   });
 });
-
-/* One-click betting on a seat */
-document.querySelectorAll('.seat').forEach(seat=>{
-  const seatId = Number(seat.dataset.seat);
-  seat.addEventListener('click',()=>{
+['Player','Banker','Tie'].forEach(name=>{
+  const spot=g('spot'+name), amt=g('amt'+name);
+  spot.addEventListener('click',()=>{
     if(inRound) return;
-    document.querySelectorAll('.ring').forEach(r=>r.classList.remove('on'));
-    document.querySelectorAll('.seatNum').forEach(r=>r.classList.remove('on'));
-    seat.querySelector('.ring').classList.add('on');
-    seat.querySelector('.seatNum').classList.add('on');
-    activeSeat = seatId;
-    placeBet(seatId);
+    const key=name.toLowerCase();
+    if(balance<currentChip) return alert('Not enough balance');
+    setChoice('live');
+    balance-=currentChip; bets[key]+=currentChip; updateBank();
+    renderChips(spot, bets[key]); playS(sChip);
+    dealBtn.disabled = totalBet()===0;
+    clearBtn.disabled = totalBet()===0;
+    rebetBtn.disabled = (lastBets.player+lastBets.banker+lastBets.tie)===0;
+    amt.textContent = money(bets[key]);
   });
 });
-document.querySelectorAll('.seat .ring, .seat .seatNum').forEach(el=>{
-  el.addEventListener('click', (e)=>{
-    e.stopPropagation();
-    placeBet(Number(el.closest('.seat').dataset.seat));
-  });
-});
-
-function placeBet(seat){
-  if(inRound) return;
-  if(balance < currentChip) { alert('Not enough balance'); return; }
-  setChoice('live');
-
-  balance -= currentChip;
-  bets[seat] += currentChip;
-  updateBank();
-  renderStack(seat);
-  playS(sChip);
-
-  dealBtn.disabled  = totalBet() === 0 ? true:false;
-  clearBtn.disabled = totalBet() === 0 ? true:false;
-  rebetBtn.disabled = lastTotalBet() === 0 ? true:false;
-}
-
-function renderStack(seat){
-  const holder = document.querySelector(`.seat[data-seat="${seat}"] .betStack`);
-  const amtEl = holder.querySelector('.betAmt'); amtEl.textContent = money(bets[seat]);
+function renderChips(holder, amount){
   holder.querySelectorAll('.chip').forEach(x=>x.remove());
-  const denoms=[100,25,5,1];
-  const colors=['#ff9abb','#ffd86a','#7dfcc8','#9be2ff'];
-  let left=bets[seat], h=0;
-  denoms.forEach((d,i)=>{ let ct=Math.floor(left/d); left%=d; for(let k=0;k<ct;k++){ const chip=document.createElement('div'); chip.className='chip'; chip.style.cssText=`position:absolute; left:50%; transform:translateX(-50%); bottom:${h*8}px; width:30px; height:30px; border-radius:50%; background:radial-gradient(circle at 35% 35%, #fff, #f5f5f5 40%, #ddd 70%, #bbb 100%); border:4px solid ${colors[i]}; box-shadow:0 8px 18px rgba(0,0,0,.35); display:grid; place-items:center; font:900 11px ui-sans-serif; color:#091020; animation:chipDrop .18s ease;`; chip.textContent='$'+d; holder.appendChild(chip); h++; }});
+  const denoms=[100,25,5,1], colors=['#ff9abb','#ffd86a','#7dfcc8','#9be2ff']; let left=amount, h=0;
+  denoms.forEach((d,i)=>{ let ct=Math.floor(left/d); left%=d; for(let k=0;k<ct;k++){ const chip=document.createElement('div'); chip.className='chip'; chip.style.cssText=`bottom:${8*h}px; border:4px solid ${colors[i]}`; chip.textContent='$'+d; holder.appendChild(chip); h++; }});
 }
-
-function totalBet(){ return bets[1]+bets[2]+bets[3]+bets[4] }
-function lastTotalBet(){ try{ const s=JSON.parse(localStorage.getItem('bj_lastbets'))||[0,0,0,0,0]; return s[1]+s[2]+s[3]+s[4] }catch(e){ return 0 } }
-function money(n){ return '$'+n.toFixed(2).replace(/\.00$/,'') }
+function totalBet(){ return bets.player+bets.banker+bets.tie }
 function updateBank(){ balEl.textContent=money(balance); betEl.textContent=money(totalBet()); lastEl.textContent=money(lastRes) }
 
-/* SHOE (6 decks) */
+/* shoe (6 decks) with burn */
 function makeShoe(){ const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], suits=['♠','♥','♦','♣']; const d=[]; for(let k=0;k<6;k++){ for(const s of suits){ for(const r of ranks){ d.push({r,s}) } } } for(let i=d.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [d[i],d[j]]=[d[j],d[i]] } return d }
-function initShoe(){ shoe=makeShoe(); shoeSize=shoe.length; cutLine = 52 + ((Math.random()*26)|0); cutReached=false; updateShoeBar(); const burn=shoe.pop(); let burnN = rankVal(burn.r); if(burnN===10) burnN=10; for(let i=0;i<burnN;i++) shoe.pop(); playS(sShuffle); updateShoeBar(); reshuffleBtn.style.display='none'; }
+function initShoe(){ shoe=makeShoe(); shoeSize=shoe.length; cutLine = 52 + ((Math.random()*26)|0); cutReached=false; updateShoeBar(); const burn=shoe.pop(); let burnN = bacVal(burn.r); if(burnN===10) burnN=10; for(let i=0;i<burnN;i++) shoe.pop(); playS(sShuffle); updateShoeBar(); reshuffleBtn.style.display='none'; }
 function draw(){ const c=shoe.pop(); updateShoeBar(); if(!cutReached && shoe.length<=cutLine){ cutReached=true; reshuffleBtn.style.display='inline-block'; } return c }
 function updateShoeBar(){ const left=shoe.length; shoeLeft.textContent=`${left} left`; shoeFill.style.width=Math.round((left/shoeSize)*100)+'%' }
 
-/* CARD VALUES */
-function rankVal(r){ if(r==='A') return 11; if(['K','Q','J','10'].includes(r)) return 10; return Number(r) }
-function handValue(arr){ let sum=0, aces=0; arr.forEach(c=>{ const v=rankVal(c.r); sum+=v; if(c.r==='A') aces++; }); while(sum>21 && aces>0){ sum-=10; aces--; } return sum }
-function makeCardEl(c, show=false){ const el=document.createElement('div'); el.className='playing-card deal-in'+(show?' reveal':''); el.innerHTML=`<div class="card3d"><div class="sideFace back">🂠</div><div class="sideFace front">${c.r}${c.s}</div></div>`; c.el=el; return el }
-function flip(c){ if(c.shown) return; c.shown=true; c.el.classList.add('reveal'); playS(sFlip); }
+/* baccarat values */
+function bacVal(r){ if(r==='A')return 1; if(['10','J','Q','K'].includes(r)) return 0; return Number(r) }
+function total(hand){ return hand.reduce((t,c)=>t+bacVal(c.r),0)%10 }
 
-/* CONTROLS */
+/* card builder (manual peel) */
+function makePeelCard(c){
+  const el=document.createElement('div'); el.className='playing-card deal-in';
+  el.innerHTML=`
+    <div class="face">${c.r}${c.s}</div>
+    <div class="cover">🂠</div>
+    <div class="corners">
+      <button class="corner tl"></button>
+      <button class="corner tr"></button>
+      <button class="corner bl"></button>
+      <button class="corner br"></button>
+    </div>
+    <div class="glow"></div>`;
+  c.el=el; c.shown=false; c.peel=0;
+  el.querySelectorAll('.corner').forEach(btn=>btn.addEventListener('click',()=>{
+    if(c!==currentTargetCard()) return; // only active card can be peeled
+    if(c.shown) return;
+    if(!btn.classList.contains('off')){
+      btn.classList.add('off'); c.peel++;
+      if(c.peel>=3){ reveal(c); }
+    }
+  }));
+  return el;
+}
+function setActive(card){
+  document.querySelectorAll('.playing-card').forEach(x=>x.classList.remove('active'));
+  if(card && card.el) card.el.classList.add('active');
+  if(card){
+    const owner = (P.includes(card)?'Player':'Banker');
+    banner.textContent = `Squeeze ${owner} card…`;
+  }
+}
+function reveal(c){
+  if(c.shown) return;
+  c.shown=true; c.el.classList.add('show'); playS(sFlip);
+  updateTotals();
+  // Next card in queue
+  nextFromQueue();
+}
+
+/* queue helpers */
+function currentTargetCard(){ return queue.length? queue[0]: null }
+function nextFromQueue(){
+  queue.shift();
+  setActive(queue[0] || null);
+  if(queue.length===0){
+    // base four revealed; proceed to third-card logic or finish
+    decideThirdCards();
+  }
+}
+
+/* totals UI */
+function updateTotals(){
+  pTot.textContent='Player: '+ (P.some(c=>c.shown)? total(P):'—');
+  bTot.textContent='Banker: '+ (B.some(c=>c.shown)? total(B):'—');
+}
+
+/* controls */
 dealBtn.addEventListener('click', startRound);
-hitBtn.addEventListener('click', ()=>playerHit(activeSeat));
-standBtn.addEventListener('click', ()=>playerStand(activeSeat));
-doubleBtn.addEventListener('click', ()=>playerDouble(activeSeat));
-rebetBtn.addEventListener('click', doRebet);
-clearBtn.addEventListener('click', clearTable);
+rebetBtn.addEventListener('click', ()=>{
+  if(inRound) return;
+  const need=lastBets.player+lastBets.banker+lastBets.tie; if(need===0) return;
+  if(balance<need) return alert('Not enough balance to rebet.');
+  balance-=need; ['player','banker','tie'].forEach(k=>{ bets[k]=lastBets[k]||0; }); updateBank();
+  ['Player','Banker','Tie'].forEach(name=>{ renderChips(g('spot'+name), bets[name.toLowerCase()]); g('amt'+name).textContent=money(bets[name.toLowerCase()]); });
+  dealBtn.disabled=false; clearBtn.disabled=false;
+});
+clearBtn.addEventListener('click', ()=>{
+  if(inRound) return;
+  balance+=totalBet(); bets={player:0,banker:0,tie:0}; updateBank();
+  ['Player','Banker','Tie'].forEach(name=>{ g('spot'+name).querySelectorAll('.chip').forEach(x=>x.remove()); g('amt'+name).textContent='$0'; });
+  dealBtn.disabled=true; clearBtn.disabled=true;
+});
 reshuffleBtn.addEventListener('click', initShoe);
-copyBtn.addEventListener('click',()=>{ const t=codeBox.textContent.trim(); if(!t)return; navigator.clipboard.writeText(t).then(()=>{ copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy',1200);});});
 
-/* ROUND FLOW */
-let dealerUp=null;
+/* round flow */
 function startRound(){
   if(inRound) return;
-  if(totalBet()===0) return alert('Place a bet on a seat.');
+  if(totalBet()===0) return alert('Place a bet.');
   setChoice('live');
 
-  inRound=true; firstAction=true; lastRes=0; banner.textContent='Dealing…';
-  dealer=[]; dealerUp=null; hiddenDown=null;
-  document.querySelectorAll('.handPlayer').forEach(h=>h.innerHTML=''); dealerHand.innerHTML=''; insurances=[0,0,0,0,0];
+  inRound=true; queue=[]; P=[]; B=[]; pHand.innerHTML=''; bHand.innerHTML=''; codeBox.style.display='none'; copyBtn.style.display='none';
+  updateTotals(); banner.textContent='Dealing…'; playS(sDeal);
 
-  hands={}; [1,2,3,4].forEach(s=>{ if(bets[s]>0){ hands[s]=[]; } });
-  playS(sDeal);
+  // deal 4 face-down cards and queue P1→B1→P2→B2
+  const P1=draw(); const B1=draw(); const P2=draw(); const B2=draw();
+  P.push({r:P1.r,s:P1.s}); B.push({r:B1.r,s:B1.s}); P.push({r:P2.r,s:P2.s}); B.push({r:B2.r,s:B2.s});
 
-  // deal: each seat 1 card up, dealer up, seats 2nd card up, dealer down
-  Object.keys(hands).map(Number).sort((a,b)=>a-b).forEach(s=>{
-    const c=draw(); const card={r:c.r,s:c.s,shown:true}; hands[s].push(card);
-    document.getElementById('hand-'+s).appendChild(makeCardEl(card,true));
-  });
-  const up=draw(); dealerUp={r:up.r,s:up.s,shown:true}; dealer.push(dealerUp); dealerHand.appendChild(makeCardEl(dealerUp,true));
+  P.forEach(c=>pHand.appendChild(makePeelCard(c)));
+  B.forEach(c=>bHand.appendChild(makePeelCard(c)));
 
-  Object.keys(hands).map(Number).sort((a,b)=>a-b).forEach(s=>{
-    const c=draw(); const card={r:c.r,s:c.s,shown:true}; hands[s].push(card);
-    document.getElementById('hand-'+s).appendChild(makeCardEl(card,true));
-  });
-  const dn=draw(); hiddenDown={r:dn.r,s:dn.s,shown:false}; dealer.push(hiddenDown); dealerHand.appendChild(makeCardEl(hiddenDown,false));
-
-  if(dealerUp.r==='A'){ showInsurance(); } else { enablePlayerActions(); }
+  queue=[P[0],B[0],P[1],B[1]];
+  setActive(queue[0]);
 }
 
-function showInsurance(){
-  insBox.classList.add('show');
-  insYes.onclick=()=>{
-    let total=0; Object.keys(hands).forEach(s=> total+=bets[s]);
-    const max=total/2;
-    if(balance<max) { alert('Not enough balance for insurance (half bet).'); insurances[0]=0; }
-    else { balance-=max; insurances[0]=max; updateBank(); }
-    insBox.classList.remove('show'); enablePlayerActions(true);
-  };
-  insNo.onclick=()=>{ insurances[0]=0; insBox.classList.remove('show'); enablePlayerActions(true); };
-}
-
-function enablePlayerActions(){
-  dealBtn.disabled=true; clearBtn.disabled=true; rebetBtn.disabled=true;
-  const anyBJ = Object.keys(hands).some(s=>handValue(hands[s])===21);
-  if(anyBJ && ['A','10','J','Q','K'].includes(dealerUp.r)){
-    flip(hiddenDown); settleRound(true); return;
+function decideThirdCards(){
+  // natural?
+  const pT=total(P), bT=total(B);
+  if(pT>=8 || bT>=8){
+    finishRound(); return;
   }
-  hitBtn.disabled=false; standBtn.disabled=false; doubleBtn.disabled=false;
-  banner.textContent='Your move — Seat '+activeSeat;
+  // player third?
+  let playerDrew=false, playerThird=null;
+  if(pT<=5){
+    playerDrew=true;
+    const c=draw(); playerThird={r:c.r,s:c.s}; P.push(playerThird);
+    pHand.appendChild(makePeelCard(playerThird));
+    queue=[playerThird]; setActive(queue[0]); return; // wait for squeeze; after reveal, we will call back here again
+  }
+  // banker third?
+  const bT0=bT;
+  let needBanker=false;
+  if(!playerDrew){
+    needBanker = bT0<=5;
+  }else{
+    // but we don't know playerThird yet; this branch runs only when player didn't draw
+    needBanker=bT0<=5;
+  }
+  if(needBanker){
+    const c=draw(); const b3={r:c.r,s:c.s}; B.push(b3);
+    bHand.appendChild(makePeelCard(b3));
+    queue=[b3]; setActive(queue[0]); return;
+  }
+  finishRound();
 }
 
-function playerHit(seat){
-  if(!hands[seat]) return;
-  const c=draw(); const card={r:c.r,s:c.s,shown:true}; hands[seat].push(card);
-  document.getElementById('hand-'+seat).appendChild(makeCardEl(card,true));
-  playS(sDeal);
-  const v=handValue(hands[seat]);
-  firstAction=false; if(v>21){ banner.textContent='Seat '+seat+' busts'; seatAutoAdvance(); }
-}
-function playerStand(seat){ firstAction=false; seatAutoAdvance(); }
-function playerDouble(seat){
-  if(!firstAction) return; if(balance<bets[seat]) return alert('Not enough balance to double.');
-  balance-=bets[seat]; bets[seat]*=2; updateBank(); renderStack(seat);
-  const c=draw(); const card={r:c.r,s:c.s,shown:true}; hands[seat].push(card);
-  document.getElementById('hand-'+seat).appendChild(makeCardEl(card,true));
-  playS(sDeal); firstAction=false; seatAutoAdvance();
-}
-function seatAutoAdvance(){
-  const order=[1,2,3,4].filter(s=>hands[s]);
-  const idx=order.indexOf(activeSeat);
-  for(let i=idx+1;i<order.length;i++){
-    const s=order[i]; const v=handValue(hands[s]); if(v<=21){ activeSeat=s; banner.textContent='Your move — Seat '+activeSeat; return; }
-  }
-  hitBtn.disabled=standBtn.disabled=doubleBtn.disabled=true;
-  dealerPlay();
-}
-function dealerPlay(){
-  banner.textContent='Dealer reveals…'; flip(hiddenDown); setTimeout(()=>{
-    const dealerBJ = handValue(dealer)===21 && dealer.length===2;
-    if(insurances[0]>0){ if(dealerBJ){ balance += insurances[0]*3; } insurances[0]=0; updateBank(); }
-    if(dealerBJ){ settleRound(true); return; }
-    while(handValue(dealer)<17){ const c=draw(); const card={r:c.r,s:c.s,shown:true}; dealer.push(card); dealerHand.appendChild(makeCardEl(card,true)); playS(sDeal); }
-    settleRound(false);
-  },450);
-}
-function settleRound(checkedBJ){
-  const dV=handValue(dealer), dealerBJ=(dV===21 && dealer.length===2);
-  let totalWin=0;
-  [1,2,3,4].forEach(seat=>{
-    if(!hands[seat]) return;
-    const v=handValue(hands[seat]); let win=0;
-    if(v>21){ /* lost */ }
-    else if(dealerBJ){
-      if(v===21 && hands[seat].length===2){ win = bets[seat]; } // push refund
-    }else{
-      if(v===21 && hands[seat].length===2){ win = bets[seat]*2.5; }
-      else if(dV>21 || v>dV){ win = bets[seat]*2; }
-      else if(v===dV){ win = bets[seat]; }
+/* When a queued third card is revealed, call this to evaluate banker 3rd if needed */
+function afterThirdReveal(){
+  // If last revealed was player's 3rd, maybe banker needs to draw
+  if(P.length===3 && !B[2]){
+    const bT0 = (B.length>=2)? total([B[0],B[1]]) : total(B);
+    const v = bacVal(P[2].r);
+    const needBanker = bankerDrawRule(bT0, v);
+    if(needBanker){
+      const c=draw(); const b3={r:c.r,s:c.s}; B.push(b3);
+      bHand.appendChild(makePeelCard(b3));
+      queue=[b3]; setActive(queue[0]); return;
     }
-    if(win>0){ totalWin += (win - 0); balance += win; }
-  });
+    finishRound(); return;
+  }
+  // If last revealed was banker's 3rd, we can finish
+  if(B.length===3){ finishRound(); return; }
+}
 
-  banner.textContent = (dealerBJ ? 'Dealer Blackjack' : ('Dealer: '+dV)) + ' — Round settled';
-  lastRes = totalWin - 0; updateBank();
-  if(totalWin>0){ codeBox.style.display='block'; codeBox.textContent=CODE; copyBtn.style.display='inline-block'; playS(sWin); confetti(); try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE,ts:Date.now()})); }catch(e){} }
-  else{ codeBox.style.display='block'; codeBox.textContent='TRY-AGAIN-NEXT-TIME'; }
+/* override reveal to hook third-card branch */
+const _revealRef = reveal;
+reveal = function(card){
+  _revealRef(card);
+  if(queue.length===0 && (P.length===2 || P.length===3)){
+    // If we just finished base four → proceed, or finished a third → check the other side
+    if(P.length===2 && B.length===2){ decideThirdCards(); }
+    else { afterThirdReveal(); }
+  }
+}
 
-  try{ localStorage.setItem('bj_lastbets', JSON.stringify(bets)); }catch(e){}
-  inRound=false; firstAction=true;
-  dealBtn.disabled=true; clearBtn.disabled=false; rebetBtn.disabled=false; hitBtn.disabled=standBtn.disabled=doubleBtn.disabled=true;
-  [1,2,3,4].forEach(s=>{ bets[s]=0; renderStack(s); });
+function bankerDrawRule(b, v){
+  if(b<=2) return true;
+  if(b===3) return v!==8;
+  if(b===4) return v>=2 && v<=7;
+  if(b===5) return v>=4 && v<=7;
+  if(b===6) return v===6 || v===7;
+  return false;
+}
+
+function finishRound(){
+  updateTotals();
+  const pT=total(P), bT=total(B);
+  let winner = (pT>bT)?'player' : (bT>pT)?'banker':'tie';
+
+  // payouts
+  let winAmount=0, pushBack=0;
+  if(winner==='player'){ if(bets.player>0) winAmount += bets.player*2; }
+  if(winner==='banker'){ if(bets.banker>0) winAmount += bets.banker*1.95; }
+  if(winner==='tie'){
+    if(bets.tie>0) winAmount += bets.tie*9; // return stake + 8:1 profit
+    pushBack += bets.player + bets.banker;
+  }
+  balance += winAmount + pushBack;
+  lastRes = (winAmount + pushBack) - (bets.player+bets.banker+bets.tie);
+  updateBank();
+
+  banner.textContent = winner==='tie' ? `TIE — ${pT}` : `${winner.toUpperCase()} wins — ${winner==='player'?pT:bT}`;
+  beadRoad.push(winner[0].toUpperCase()); if(beadRoad.length>36) beadRoad.shift(); renderBead();
+
+  try{ lastBets = {...bets}; localStorage.setItem('bac_lastbets', JSON.stringify(lastBets)); }catch(e){}
+
+  // voucher
+  codeBox.style.display='block';
+  if(winAmount>0){ codeBox.textContent=CODE; copyBtn.style.display='inline-block'; playS(sWin); confetti(); try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE, ts:Date.now()})); }catch(e){} }
+  else{ codeBox.textContent='TRY-AGAIN-NEXT-TIME'; }
+
+  // reset
+  ['Player','Banker','Tie'].forEach(name=>{ g('spot'+name).querySelectorAll('.chip').forEach(x=>x.remove()); g('amt'+name).textContent='$0'; });
+  bets={player:0,banker:0,tie:0};
+  dealBtn.disabled=true; clearBtn.disabled=false; rebetBtn.disabled=(lastBets.player+lastBets.banker+lastBets.tie)===0?true:false;
+  inRound=false;
 
   if(cutReached){ reshuffleBtn.style.display='inline-block'; }
 }
-function doRebet(){
-  if(inRound) return;
-  try{
-    const last=JSON.parse(localStorage.getItem('bj_lastbets'))||[0,0,0,0,0];
-    const need=last[1]+last[2]+last[3]+last[4];
-    if(need===0) return;
-    if(balance<need) return alert('Not enough balance to rebet.');
-    balance-=need; [1,2,3,4].forEach(s=>{ bets[s]=last[s]||0; renderStack(s); }); updateBank();
-    dealBtn.disabled=false; clearBtn.disabled=false;
-  }catch(e){}
-}
-function clearTable(){
-  if(inRound) return;
-  balance+=totalBet(); [1,2,3,4].forEach(s=>{ bets[s]=0; renderStack(s); }); updateBank();
-  dealBtn.disabled=true; clearBtn.disabled=true;
+
+function renderBead(){
+  bead.innerHTML='';
+  beadRoad.forEach(c=>{
+    const d=document.createElement('div'); d.className='cell '+(c==='P'?'cP':c==='B'?'cB':'cT'); d.textContent=c; bead.appendChild(d);
+  });
 }
 
-/* INIT */
-function priorClaim(){ try{ const p=localStorage.getItem(CLAIM_KEY); if(p){ const code=(JSON.parse(p).code)||CODE; codeBox.style.display='block'; codeBox.textContent=code; copyBtn.style.display='inline-block'; } }catch(e){} }
-initShoe(); updateBank(); priorClaim();
+/* copy */
+copyBtn.addEventListener('click',()=>{ const t=codeBox.textContent.trim(); if(!t)return; navigator.clipboard.writeText(t).then(()=>{ copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy',1200);});});
+
+/* init */
+function prior(){ try{ const p=JSON.parse(localStorage.getItem('bac_lastbets')||'null'); if(p){ lastBets=p; rebetBtn.disabled=(lastBets.player+lastBets.banker+lastBets.tie)===0; } const c=localStorage.getItem(CLAIM_KEY); if(c){ codeBox.style.display='block'; codeBox.textContent=(JSON.parse(c).code)||CODE; copyBtn.style.display='inline-block'; } }catch(e){} }
+initShoe(); updateBank(); prior();
 </script>
 </body>
 </html>
