@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>Live — Baccarat Squeeze (Lite, 6D • Third-Card Rules)</title>
+<title>Live — Baccarat Auto Flip (6D • Burn • Cut • Announce)</title>
 <style>
   :root{
     --ink:#eaf2ff; --mut:#9fb0d9; --g1:#71e1ff; --g2:#25c3ff;
@@ -20,7 +20,7 @@
     position:fixed; left:12px; top:12px; z-index:10; text-decoration:none;
     background:rgba(0,0,0,.5); padding:8px 12px; border-radius:10px; color:#fff; font-weight:700
   }
-  .wrap{ width:min(1000px,96vw) }
+  .wrap{ width:min(1020px,96vw) }
   .card{
     position:relative; border-radius:22px; padding:18px; overflow:visible;
     background:linear-gradient(180deg,#1b2a56,#0f1832);
@@ -46,6 +46,23 @@
   h1{margin:0 0 8px; font-size:22px; font-weight:900; text-transform:uppercase}
   p.sub{margin:0 6px 16px; color:var(--mut)}
 
+  /* Top info row */
+  .topbar{
+    display:flex; gap:10px; align-items:center; justify-content:space-between; margin-bottom:10px; padding:0 2px;
+  }
+  .shoe{
+    display:flex; align-items:center; gap:10px;
+    background:rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.08);
+    border-radius:12px; padding:8px 10px; min-width:240px;
+  }
+  .bar{ position:relative; flex:1 1 auto; height:8px; border-radius:999px; background:#16213f; overflow:hidden }
+  .bar>i{position:absolute; left:0; top:0; bottom:0; width:0%; background:linear-gradient(90deg,#65f0ff,#ff62ff); transition:width .25s ease}
+  .cutTag{
+    font-size:11px; padding:3px 8px; border-radius:999px; font-weight:900;
+    background:#28121f; color:#ffd2de; border:1px solid rgba(255,200,220,.25);
+    box-shadow:0 0 12px rgba(255,120,180,.2) inset;
+  }
+
   .felt{
     position:relative; border-radius:18px; padding:14px; perspective:1400px;
     background:radial-gradient(closest-side,#13325f,#0e1f43);
@@ -69,53 +86,34 @@
   .hand{display:flex; gap:12px; justify-content:center; min-height:126px}
 
   .playing-card{
+    --blur:4px; --veil:.78;
     position:relative; width:90px; height:126px; border-radius:14px;
     background:radial-gradient(240px 160px at 50% -20%,#fff,#e9eefc 40%,#c8d4f3 100%);
     outline:2px solid #e5ecff; box-shadow:0 16px 28px rgba(0,0,0,.4);
     display:grid; place-items:center; font-weight:900; color:#1a2050; overflow:hidden;
-    transform: translateZ(0) rotateX(6deg); transition: transform .15s ease, box-shadow .15s ease;
+    transform: translateZ(0) rotateX(6deg);
   }
-  .playing-card:hover{ transform:translateZ(18px) rotateX(6deg); box-shadow:0 24px 46px rgba(0,0,0,.55) }
-  .playing-card.active{
-    box-shadow:0 0 0 3px rgba(113,225,255,.6), 0 18px 42px rgba(0,0,0,.55);
-    transform:translateZ(22px) rotateX(6deg) scale(1.02);
-  }
-  .playing-card.active::after{
-    content:""; position:absolute; inset:-8px; border-radius:16px; pointer-events:none;
-    background:radial-gradient(140px 80px at 50% -20%, rgba(255,255,255,.2), transparent 70%);
-    mix-blend-mode:screen;
-  }
-
   .deal-in{ opacity:0; transform:translateY(-30px) rotateX(12deg) scale(.96); animation: deal .42s cubic-bezier(.2,.8,.2,1) forwards; }
   @keyframes deal{ to{ opacity:1; transform:translateY(0) rotateX(6deg) scale(1) } }
 
-  .face{ filter:blur(3px); transform:translateZ(2px) }
-  .playing-card.show .face{ filter:none; transition:filter .18s ease }
-  .cover{ position:absolute; inset:0; pointer-events:none; background:linear-gradient(180deg,rgba(10,16,30,.75),rgba(10,16,30,.55)); }
-
-  .corners{ position:absolute; inset:0 }
-  .corner{
-    position:absolute; width:44px; height:44px; background:rgba(10,16,30,.92);
-    outline:1px solid rgba(255,255,255,.06); opacity:.95; transition:opacity .15s ease;
+  /* Auto flip: rotateY + unblur + uncover */
+  .flip{ animation: yflip .48s ease both; }
+  @keyframes yflip{
+    0%  { transform: rotateY(90deg) rotateX(6deg) scale(1.02) }
+    55% { transform: rotateY(-10deg) rotateX(6deg) }
+    100%{ transform: rotateY(0deg) rotateX(6deg) }
   }
-  .corner.off{ opacity:0; pointer-events:none }
-  .playing-card.show .corners{ display:none }
-
-  .tl{left:0;top:0;clip-path:polygon(0 0,100% 0,0 100%)}
-  .tr{right:0;top:0;clip-path:polygon(0 0,100% 0,100% 100%)}
-  .bl{left:0;bottom:0;clip-path:polygon(0 0,100% 100%,0 100%)}
-  .br{right:0;bottom:0;clip-path:polygon(100% 0,100% 100%,0 100%)}
+  .face{ filter:blur(var(--blur)); transform:translateZ(2px) }
+  .playing-card.show .face{ filter:none; transition:filter .2s ease }
+  .cover{
+    position:absolute; inset:0; pointer-events:none;
+    background: linear-gradient(180deg, rgba(10,16,30,var(--veil)), rgba(10,16,30,calc(var(--veil) - .2)));
+    transition: opacity .2s ease, background .2s ease;
+  }
+  .playing-card.show .cover{ opacity:0 }
 
   .score{text-align:center; color:#ffd86a; font-weight:900; text-shadow:0 0 10px rgba(255,216,106,.6); margin-top:6px}
   .status{text-align:center; margin-top:10px; color:#9fb0d9}
-
-  .guide{
-    position:absolute; inset:-8px; border-radius:16px; pointer-events:none; display:none;
-    border:2px dashed rgba(113,225,255,.8); box-shadow:0 0 22px rgba(113,225,255,.45) inset;
-    animation: pulse 1.2s ease-in-out infinite;
-  }
-  .playing-card.active .guide{ display:block }
-  @keyframes pulse{ 0%{opacity:.6} 50%{opacity:1} 100%{opacity:.6} }
 
   .code{
     display:none; margin-top:10px; text-align:center;
@@ -126,22 +124,47 @@
     display:none; margin-top:8px; border:0; border-radius:10px; padding:8px 10px; font-weight:900;
     background:#2b2b2b; color:#fff
   }
+
+  .announcer{
+    position:absolute; left:50%; top:-10px; transform:translate(-50%,-100%);
+    background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.12);
+    padding:10px 14px; border-radius:12px; font-weight:900; letter-spacing:.3px;
+    box-shadow:0 10px 40px rgba(0,0,0,.45); opacity:0; pointer-events:none;
+  }
+  .announcer.show{ animation: toast 2.2s ease forwards }
+  @keyframes toast{
+    0%{opacity:0; transform:translate(-50%,-130%)}
+    10%{opacity:1; transform:translate(-50%,-100%)}
+    80%{opacity:1}
+    100%{opacity:0; transform:translate(-50%,-130%)}
+  }
 </style>
 </head>
 <body>
   <a class="back" href="index.html">← Back</a>
   <div class="wrap">
     <div class="card">
-      <h1>Baccarat Squeeze (Lite)</h1>
-      <p class="sub">Bet first, then Deal. Squeeze cards in order <b>(P1 → B1 → P2 → B2 → P3? → B3?)</b>. True third-card rules. Highest total (mod 10) wins.</p>
+      <h1>Baccarat — Auto Flip</h1>
+      <p class="sub">Bet → Deal → Cards flip automatically in order (P1 → B1 → P2 → B2 → P3? → B3?). True third-card rules, burn & cut, announcer, SFX.</p>
+
+      <div class="topbar">
+        <div class="shoe">
+          <div style="font-weight:800">Shoe</div>
+          <div class="bar"><i id="shoeFill"></i></div>
+          <div id="shoeLeft" style="font-size:12px; min-width:70px; text-align:right">—</div>
+        </div>
+        <div class="cutTag" id="cutTag" style="display:none">Cut reached — last hand</div>
+      </div>
 
       <div class="felt">
+        <div class="announcer" id="announcer">Announcement</div>
         <canvas id="fx"></canvas>
 
         <div class="row" style="margin-bottom:10px">
           <button class="btn" id="betPlayer">Bet Player</button>
           <button class="btn ghost" id="betBanker">Bet Banker</button>
           <button class="btn" id="dealBtn" disabled>Deal</button>
+          <button class="btn ghost" id="reshuffleBtn" style="display:none">Reshuffle</button>
         </div>
 
         <div class="zone">
@@ -156,7 +179,7 @@
         </div>
 
         <div class="score" id="result">Place your bet</div>
-        <div class="status" id="hint">Squeeze the highlighted card: tap any 3 corners to flip.</div>
+        <div class="status" id="hint">Cards reveal automatically. Enjoy the show ✨</div>
 
         <div class="code" id="codeBox">LIVE-BAC-XXXX</div>
         <button class="copy" id="copyBtn">Copy Code</button>
@@ -165,9 +188,10 @@
   </div>
 
 <!-- SFX -->
-<audio id="sDeal"  src="https://cdn.jsdelivr.net/gh/naptha/tinyfiles@main/slot/lever.mp3" preload="auto"></audio>
-<audio id="sFlip"  src="https://cdn.jsdelivr.net/gh/naptha/tinyfiles@main/slot/stop.mp3"  preload="auto"></audio>
-<audio id="sWin"   src="https://cdn.jsdelivr.net/gh/naptha/tinyfiles@main/slot/win.mp3"   preload="auto"></audio>
+<audio id="sDeal"    src="https://cdn.jsdelivr.net/gh/naptha/tinyfiles@main/slot/lever.mp3" preload="auto"></audio>
+<audio id="sFlip"    src="https://cdn.jsdelivr.net/gh/naptha/tinyfiles@main/slot/stop.mp3"  preload="auto"></audio>
+<audio id="sWin"     src="https://cdn.jsdelivr.net/gh/naptha/tinyfiles@main/slot/win.mp3"   preload="auto"></audio>
+<audio id="sShuffle" src="https://cdn.jsdelivr.net/gh/naptha/tinyfiles@main/slot/win.mp3"   preload="auto"></audio>
 
 <script>
 /* ------- Fallback if assets/common.js is missing ------- */
@@ -179,8 +203,15 @@ if (typeof window.setChoice !== 'function') {
 }
 
 /* ------- Config ------- */
-const CLAIM_KEY='live_bac_squeeze_claimed_v1';
+const CLAIM_KEY='live_bac_auto_claimed_v1';
 const CODE_WIN='LIVE-BAC-WIN', CODE_LOSE='TRY-AGAIN-NEXT-TIME';
+const DECKS = 6;           // 6-deck shoe
+const CUT_BACK_MIN = 14;   // cut card ~14–26 from back
+const CUT_BACK_RNG = 12;
+
+const REVEAL_DELAY = 700;  // ms between flips (first four)
+const REVEAL_DELAY_3 = 800;// ms for third-card flips
+const START_DELAY = 550;   // ms before first flip after dealing
 
 /* ------- Realm lock gate ------- */
 const c=getChoice(); if(c && c!=='live'){ alert('You already started Slot. Live is locked for this event.'); location.replace('index.html'); }
@@ -195,9 +226,13 @@ let bet=null, dealt=false;
 let player=[], banker=[];
 let order=[], step=0, thirdProcessed=false;
 
+let shoe=[], shoeSize=0, cutLine=0, cutReached=false, shoeNeedsShuffle=false;
+
 const betPlayer = document.getElementById('betPlayer');
 const betBanker = document.getElementById('betBanker');
 const dealBtn   = document.getElementById('dealBtn');
+const reshuffleBtn = document.getElementById('reshuffleBtn');
+
 const pHand     = document.getElementById('pHand');
 const bHand     = document.getElementById('bHand');
 const pScoreEl  = document.getElementById('pScore');
@@ -207,9 +242,15 @@ const hintEl    = document.getElementById('hint');
 const codeBox   = document.getElementById('codeBox');
 const copyBtn   = document.getElementById('copyBtn');
 
+const shoeFill  = document.getElementById('shoeFill');
+const shoeLeft  = document.getElementById('shoeLeft');
+const cutTag    = document.getElementById('cutTag');
+const announcer = document.getElementById('announcer');
+
 const sDeal = document.getElementById('sDeal');
 const sFlip = document.getElementById('sFlip');
 const sWin  = document.getElementById('sWin');
+const sShuffle = document.getElementById('sShuffle');
 
 /* Confetti FX */
 const fx = document.getElementById('fx'); const ctx = fx.getContext('2d');
@@ -225,6 +266,62 @@ function confetti(){
   })();
 }
 
+/* ------- Announcer ------- */
+function announce(msg){
+  announcer.textContent = msg;
+  announcer.classList.remove('show');
+  void announcer.offsetWidth; // reflow
+  announcer.classList.add('show');
+}
+
+/* ------- Shoe (6-deck) ------- */
+function makeShoe(decks=DECKS){
+  const d=[];
+  for(let k=0;k<decks;k++){
+    for(const s of suits){
+      for(const r of ranks){ d.push({r,s}); }
+    }
+  }
+  for(let i=d.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [d[i],d[j]]=[d[j],d[i]]; }
+  return d;
+}
+
+function initShoe(){
+  shoe = makeShoe(DECKS);
+  shoeSize = shoe.length;
+  cutLine = Math.floor(CUT_BACK_MIN + Math.random()*CUT_BACK_RNG);
+  cutReached = false; shoeNeedsShuffle = false;
+  updateShoeBar();
+  // Burn card
+  const burnFirst = shoe.pop();
+  const burnVal = Math.max(1, val(burnFirst.r) || 10);
+  for(let i=0;i<burnVal;i++) shoe.pop();
+  announce(`Burn card: ${burnFirst.r}${burnFirst.s} — burn ${burnVal} more`);
+  try{ sShuffle.currentTime=0; sShuffle.play().catch(()=>{}); }catch(e){}
+  updateShoeBar();
+  reshuffleBtn.style.display='none';
+}
+
+function drawFromShoe(){
+  if(shoe.length<=0){ initShoe(); }
+  const card = shoe.pop();
+  updateShoeBar();
+  if(!cutReached && shoe.length<=cutLine){
+    cutReached = true; cutTag.style.display='inline-block';
+    announce('Cut card reached — last hand of shoe');
+  }
+  return card;
+}
+
+function updateShoeBar(){
+  const left = shoe.length;
+  shoeLeft.textContent = `${left} left`;
+  const pct = Math.max(0, Math.min(100, Math.round((left/shoeSize)*100)));
+  shoeFill.style.width = pct + '%';
+  if(left<=cutLine){ shoeFill.style.filter='drop-shadow(0 0 6px rgba(255,120,160,.7))'; }
+  else shoeFill.style.filter='none';
+}
+
 /* ------- Scores & UI ------- */
 function score(hand){ return hand.reduce((t,c)=>t+val(c.r),0)%10; }
 function twoScore(hand){ return (val(hand[0].r)+val(hand[1].r))%10; }
@@ -232,12 +329,6 @@ function updateScores(){
   const ps = player.some(c=>c.shown) ? score(player) : '??';
   const bs = banker.some(c=>c.shown) ? score(banker) : '??';
   pScoreEl.textContent = ps; bScoreEl.textContent = bs;
-}
-function setActiveCard(cardObj){
-  [...document.querySelectorAll('.playing-card')].forEach(el=>el.classList.remove('active'));
-  if (!cardObj) return;
-  cardObj.el.classList.add('active');
-  hintEl.textContent = `Squeeze ${cardObj.side==='p'?'Player':'Banker'} card ${cardObj.idx+1}: tap any 3 corners`;
 }
 
 /* ------- Build card element ------- */
@@ -247,31 +338,22 @@ function makeCardEl(cardObj){
   el.innerHTML=`
     <div class="face">${cardObj.r}${cardObj.s}</div>
     <div class="cover"></div>
-    <div class="corners">
-      <button class="corner tl" aria-label="Peel top-left"></button>
-      <button class="corner tr" aria-label="Peel top-right"></button>
-      <button class="corner bl" aria-label="Peel bottom-left"></button>
-      <button class="corner br" aria-label="Peel bottom-right"></button>
-    </div>
-    <div class="guide"></div>
   `;
   el.style.animationDelay = (cardObj.delay || 0)+'ms';
-  el.querySelectorAll('.corner').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      if (order[step] !== cardObj) return; // only current card can be peeled
-      if(cardObj.shown) return;
-      if(!btn.classList.contains('off')){
-        btn.classList.add('off'); cardObj.peel++;
-        if(cardObj.peel>=3){
-          cardObj.shown=true; el.classList.add('show');
-          try{ sFlip.currentTime=0; sFlip.play().catch(()=>{}); }catch(e){}
-          updateScores();
-          setTimeout(nextStep, 220);
-        }
-      }
-    });
-  });
   return el;
+}
+
+/* ------- Flip animation (auto) ------- */
+function flipCard(card){
+  if(card.shown) return;
+  card.shown = true;
+  card.el.classList.add('flip');
+  // soften blur/veil as we flip
+  card.el.style.setProperty('--blur','0px');
+  card.el.style.setProperty('--veil','0.0');
+  try{ sFlip.currentTime=0; sFlip.play().catch(()=>{}); }catch(e){}
+  // reveal
+  setTimeout(()=>{ card.el.classList.add('show'); updateScores(); }, 240);
 }
 
 /* ------- Bet / Deal ------- */
@@ -285,48 +367,95 @@ function choose(side){
 betPlayer.addEventListener('click', ()=>choose('player'));
 betBanker.addEventListener('click', ()=>choose('banker'));
 
+function ensureShoeReady(){
+  if(!shoe.length || shoeNeedsShuffle){ initShoe(); }
+  if(shoe.length<6){ initShoe(); }
+}
+
 function deal(){
   if(dealt) return; dealt=true; thirdProcessed=false; order=[]; step=0;
+  ensureShoeReady();
   try{ sDeal.currentTime=0; sDeal.play().catch(()=>{}); }catch(e){}
-  // initial two each
-  player = [ {r:rnd(ranks),s:rnd(suits),shown:false,peel:0,side:'p',idx:0,delay:80},
-             {r:rnd(ranks),s:rnd(suits),shown:false,peel:0,side:'p',idx:1,delay:360} ];
-  banker = [ {r:rnd(ranks),s:rnd(suits),shown:false,peel:0,side:'b',idx:0,delay:220},
-             {r:rnd(ranks),s:rnd(suits),shown:false,peel:0,side:'b',idx:1,delay:500} ];
+  // initial two each from shoe
+  const cP1 = drawFromShoe(), cB1 = drawFromShoe(), cP2 = drawFromShoe(), cB2 = drawFromShoe();
+  player = [ {r:cP1.r,s:cP1.s,shown:false,side:'p',idx:0,delay:80},
+             {r:cP2.r,s:cP2.s,shown:false,side:'p',idx:1,delay:360} ];
+  banker = [ {r:cB1.r,s:cB1.s,shown:false,side:'b',idx:0,delay:220},
+             {r:cB2.r,s:cB2.s,shown:false,side:'b',idx:1,delay:500} ];
+
   pHand.innerHTML=''; bHand.innerHTML='';
   player.forEach(c=>{ c.el = makeCardEl(c); pHand.appendChild(c.el); });
   banker.forEach(c=>{ c.el = makeCardEl(c); bHand.appendChild(c.el); });
   order = [ player[0], banker[0], player[1], banker[1] ];
   updateScores();
-  resultEl.textContent='Squeeze to reveal';
-  setTimeout(()=> setActiveCard(order[0]), 540);
+  resultEl.textContent='Dealt — revealing…';
+  setTimeout(runAutoReveals, START_DELAY);
 }
 dealBtn.addEventListener('click', deal);
 
-/* ------- Third-card decision (true rules) ------- */
+reshuffleBtn.addEventListener('click', ()=>{ initShoe(); announce('New shoe shuffled'); });
+
+/* ------- Auto reveal engine ------- */
+function runAutoReveals(){
+  // Reveal P1, B1, P2, B2 automatically
+  const revealNext = ()=>{
+    if(step < order.length){
+      flipCard(order[step++]);
+      setTimeout(revealNext, REVEAL_DELAY);
+    }else{
+      // After first four, decide on thirds
+      if(!thirdProcessed){
+        thirdProcessed = true;
+        const added = processThirdCards();
+        if(added){
+          setTimeout(()=>{
+            // reveal any new third cards
+            const revealThirds = ()=>{
+              if(step < order.length){
+                flipCard(order[step++]);
+                setTimeout(revealThirds, REVEAL_DELAY_3);
+              }else{
+                finishRound();
+              }
+            };
+            revealThirds();
+          }, 380);
+          return;
+        }
+      }
+      finishRound();
+    }
+  };
+  revealNext();
+}
+
+/* ------- Third-card decision (true rules) + announcements ------- */
 function processThirdCards(){
-  // returns true if any third cards were added (so order extends), else false
   const pTwo = twoScore(player);
   const bTwo = twoScore(banker);
 
-  // Natural 8/9: no third card
-  if (pTwo>=8 || bTwo>=8) return false;
+  if (pTwo>=8 || bTwo>=8){
+    announce(`Natural ${Math.max(pTwo,bTwo)} — no draws`);
+    return false;
+  }
 
   let playerDraws = (pTwo<=5);
   let bankerDraws = false;
   let p3=null, b3=null;
 
   if (!playerDraws){
-    // Player stands (6/7): Banker draws ≤5 else stands
+    // Player stands 6/7
     bankerDraws = (bTwo<=5);
+    announce(`Player stands ${pTwo}${bankerDraws? ' — Banker draws' : ' — Banker stands'}`);
     if (bankerDraws){
-      b3 = {r:rnd(ranks), s:rnd(suits), shown:false, peel:0, side:'b', idx:2, delay:140};
+      const c = drawFromShoe();
+      b3 = {r:c.r, s:c.s, shown:false, side:'b', idx:2, delay:160};
     }
   } else {
-    // Player draws third card
-    p3 = {r:rnd(ranks), s:rnd(suits), shown:false, peel:0, side:'p', idx:2, delay:120};
-    const pv = val(p3.r); // 0–9 (10/J/Q/K=0)
-    // Banker rules when Player draws:
+    // Player draws
+    const cp = drawFromShoe();
+    p3 = {r:cp.r, s:cp.s, shown:false, side:'p', idx:2, delay:120};
+    const pv = val(cp.r); // 0–9 (10/J/Q/K=0)
     if (bTwo<=2) bankerDraws = true;
     else if (bTwo===3) bankerDraws = (pv!==8);
     else if (bTwo===4) bankerDraws = (pv>=2 && pv<=7);
@@ -334,45 +463,20 @@ function processThirdCards(){
     else if (bTwo===6) bankerDraws = (pv===6 || pv===7);
     else bankerDraws = false;
 
+    announce(`Player draws ${cp.r}${cp.s}${bankerDraws? ' — Banker draws' : ' — Banker stands'}`);
+
     if (bankerDraws){
-      b3 = {r:rnd(ranks), s:rnd(suits), shown:false, peel:0, side:'b', idx:2, delay:220};
+      const cb = drawFromShoe();
+      b3 = {r:cb.r, s:cb.s, shown:false, side:'b', idx:2, delay:220};
     }
   }
 
-  // Render + append to reveal order in baccarat sequence
-  let added = false;
-  if (p3){
-    p3.el = makeCardEl(p3); pHand.appendChild(p3.el);
-    order.push(p3); added = true;
-  }
-  if (b3){
-    b3.el = makeCardEl(b3); bHand.appendChild(b3.el);
-    order.push(b3); added = true;
-  }
-  if (added){ try{ sDeal.currentTime=0; sDeal.play().catch(()=>{}); }catch(e){} }
+  let added=false;
+  if (p3){ p3.el = makeCardEl(p3); pHand.appendChild(p3.el); order.push(p3); added=true; }
+  if (b3){ b3.el = makeCardEl(b3); bHand.appendChild(b3.el); order.push(b3); added=true; }
+
+  try{ if(added){ sDeal.currentTime=0; sDeal.play().catch(()=>{}); } }catch(e){}
   return added;
-}
-
-/* ------- Reveal engine ------- */
-function nextStep(){
-  step++;
-  if(step < order.length){
-    setActiveCard(order[step]);
-  }else{
-    // finished current queue
-    if(!thirdProcessed){
-      thirdProcessed = true;
-      const added = processThirdCards();
-      if (added){
-        // continue with newly added third cards
-        setTimeout(()=> setActiveCard(order[step]), 250);
-        return;
-      }
-    }
-    // no more cards => finish
-    setActiveCard(null);
-    finishRound();
-  }
 }
 
 /* ------- Finish / Result ------- */
@@ -382,20 +486,39 @@ function finishRound(){
   if(winner==='tie'){
     resultEl.textContent='Tie — no voucher';
     codeBox.style.display='block'; codeBox.textContent='TRY-AGAIN-NEXT-TIME';
-    return;
+  } else {
+    const youWin = (bet===winner);
+    resultEl.textContent = youWin ? 'You win!' : (winner==='player'?'Player wins':'Banker wins');
+    if(youWin){
+      codeBox.style.display='block'; codeBox.textContent=CODE_WIN; copyBtn.style.display='inline-block';
+      try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE_WIN, ts:Date.now()})); }catch(e){}
+      try{ sWin.currentTime=0; sWin.play().catch(()=>{}); }catch(e){}
+      confetti();
+    }else{
+      codeBox.style.display='block'; codeBox.textContent=CODE_LOSE;
+    }
   }
-  const youWin = (bet===winner);
-  resultEl.textContent = youWin ? 'You win!' : (winner==='player'?'Player wins':'Banker wins');
 
-  if(youWin){
-    codeBox.style.display='block'; codeBox.textContent=CODE_WIN; copyBtn.style.display='inline-block';
-    try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE_WIN, ts:Date.now()})); }catch(e){}
-    try{ sWin.currentTime=0; sWin.play().catch(()=>{}); }catch(e){}
-    confetti();
-  }else{
-    codeBox.style.display='block'; codeBox.textContent=CODE_LOSE;
+  if(cutReached){
+    shoeNeedsShuffle = true;
+    reshuffleBtn.style.display='inline-block';
+    dealBtn.disabled=true;
+    announce('Shoe finished — reshuffle for next hand');
   }
+
+  bet=null; dealt=false;
+  betPlayer.disabled=false; betBanker.disabled=false;
+  if(!shoeNeedsShuffle) dealBtn.disabled=true;
+  resultEl.textContent += ' • Place a new bet to play again';
 }
+
+/* ------- Copy code ------- */
+copyBtn.addEventListener('click',()=>{
+  const t=codeBox.textContent.trim(); if(!t) return;
+  navigator.clipboard.writeText(t).then(()=>{
+    copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy Code',1200);
+  });
+});
 
 /* ------- Prior claim (auto-finalize) ------- */
 try{
@@ -408,13 +531,8 @@ try{
   }
 }catch(e){}
 
-/* ------- Copy code ------- */
-copyBtn.addEventListener('click',()=>{
-  const t=codeBox.textContent.trim(); if(!t) return;
-  navigator.clipboard.writeText(t).then(()=>{
-    copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy Code',1200);
-  });
-});
+/* ------- Boot shoe on load ------- */
+initShoe();
 </script>
 </body>
 </html>
