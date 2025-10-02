@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>Live — Mini Blackjack (Real Felt Edition · No-Overlap)</title>
+<title>Live — Mini Blackjack (Real Felt + Banner + SFX)</title>
 <meta name="theme-color" content="#073d2b"/>
 <style>
   :root{
@@ -89,22 +89,33 @@
   .fx{position:absolute;inset:0;pointer-events:none;overflow:visible;z-index:5}
   .fly{position:absolute;width:74px;height:102px;border-radius:10px;will-change:transform;transform:translate3d(0,0,0);background:linear-gradient(180deg,#0e1a3a,#0a1329);outline:1px solid var(--ring);box-shadow:0 12px 30px rgba(0,0,0,.45);transition: transform .48s cubic-bezier(.22,.8,.24,1), opacity .2s ease}
   .spark{position:absolute;width:8px;height:8px;border-radius:2px;background:#fff;box-shadow:0 0 18px rgba(255,255,255,.7);opacity:.9}
-  .pulse{animation:glow 1.6s ease-in-out infinite}
-  @keyframes glow {0%{box-shadow:0 0 0 rgba(255,216,106,0)} 50%{box-shadow:0 0 24px rgba(255,216,106,.55)} 100%{box-shadow:0 0 0 rgba(255,216,106,0)}}
+
+  /* Pulses & flashes for table accent on outcome */
   @keyframes flashWin {0%,100%{box-shadow:inset 0 0 0 rgba(0,0,0,0)} 40%{box-shadow:inset 0 0 200px rgba(174,247,193,.25)}}
   @keyframes flashLose {0%,100%{box-shadow:inset 0 0 0 rgba(0,0,0,0)} 40%{box-shadow:inset 0 0 200px rgba(255,100,120,.18)}}
   @keyframes flashPush {0%,100%{box-shadow:inset 0 0 0 rgba(0,0,0,0)} 40%{box-shadow:inset 0 0 200px rgba(160,200,255,.18)}}
-  .shake{animation:shake .35s ease}
-  @keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-6px)}40%,60%{transform:translateX(6px)}}
-  .sweep::after{content:""; position:absolute; inset:-2px; pointer-events:none; opacity:.6;background:linear-gradient(90deg, transparent 0%, rgba(255,255,255,.08) 15%, rgba(255,255,255,.18) 25%, rgba(255,255,255,.08) 35%, transparent 50%, transparent 100%);background-size:200% 100%; filter:blur(1px); animation:sweep 1.4s ease forwards}
-  @keyframes sweep {0%{background-position:-200% 50%}100%{background-position:200% 50%}}
+  .table.win  { animation: flashWin  .8s ease }
+  .table.lose { animation: flashLose .8s ease }
+  .table.push { animation: flashPush .8s ease }
+
+  /* Outcome Banner */
+  .outcome{position:absolute; inset:0; pointer-events:none; display:grid; place-items:center; opacity:0; transform:scale(.98); transition:opacity .25s ease, transform .25s ease; z-index: 8;}
+  .outcome.show{ opacity:1; transform:scale(1); }
+  .outcome-wrap{padding:18px 26px; border-radius:18px;background: rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.15); box-shadow:0 30px 90px rgba(0,0,0,.6); text-align:center; backdrop-filter: blur(4px); animation: popIn .5s cubic-bezier(.22,.8,.24,1);}
+  .outcome-title{font-weight:1000; font-size: clamp(28px, 4.4vw, 52px); letter-spacing:.06em; line-height:1; text-shadow: 0 6px 22px rgba(0,0,0,.6);}
+  .outcome-sub{margin-top:6px; font-weight:800; font-size: clamp(13px, 1.8vw, 18px); color:#fff; opacity:.9}
+  .outcome.win  .outcome-title{ color:#aef7c1; text-shadow:0 0 24px rgba(80,220,150,.55) }
+  .outcome.lose .outcome-title{ color:#ffb3be; text-shadow:0 0 24px rgba(255,120,140,.55) }
+  .outcome.push .outcome-title{ color:#d9e7ff; text-shadow:0 0 24px rgba(160,200,255,.55) }
+  @keyframes popIn{ 0%{transform:scale(.85); opacity:0} 60%{transform:scale(1.03); opacity:1} 100%{transform:scale(1)} }
+
   @media(max-width:820px){.zone{grid-template-columns:1fr} .status{margin:8px 0 12px} .controls{margin:16px 0 10px}}
 </style>
 </head>
 <body>
   <a class="back" href="index.html">← Back</a>
   <div class="wrap">
-    <div class="card" id="card">
+    <div class="card table" id="table">
       <div class="rim"></div>
       <div class="rail"></div>
 
@@ -141,7 +152,7 @@
         <div class="slot"><div class="stackChip" style="background:var(--chip-black)"></div></div>
       </div>
 
-      <div class="table" id="table">
+      <div class="table-inner" style="position:relative; padding:8px 16px 16px;">
         <div id="status" class="status">Place a bet, then Deal</div>
 
         <!-- Dealer -->
@@ -208,12 +219,20 @@
 
         <!-- FX layer -->
         <div class="fx" id="fx"></div>
+
+        <!-- Outcome banner -->
+        <div id="outcome" class="outcome" aria-live="polite">
+          <div class="outcome-wrap">
+            <div id="outcomeTitle" class="outcome-title">YOU WIN</div>
+            <div id="outcomeSub" class="outcome-sub">Player 21 • Dealer 20</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
 <script>
-/* ===== Realm lock (kept) ===== */
+/* ===== Lock to Live realm (kept from your flow) ===== */
 if (typeof window.getChoice !== 'function') { window.getChoice = () => {try{return localStorage.getItem('realm_choice')}catch(e){return null}} }
 if (typeof window.setChoice !== 'function') { window.setChoice = (v) => {try{localStorage.setItem('realm_choice',v)}catch(e){}} }
 const CLAIM_KEY='live_blackjack_claimed_v1', CODE='LIVE-BJ-21';
@@ -292,7 +311,11 @@ const sfx={
   chip:()=>{ playTone(900,.03,'square',.05); noise(.02,.04,'bandpass',1600,1.8,.005); },
   shuffle:()=>{ for(let i=0;i<6;i++) noise(.06,.04,'bandpass',900,2,i*0.05); playTone(320,.1,'triangle',.05,.05); },
   crowdOof:()=>{ noise(.22,.06,'lowpass',380,.8); playTone(220,.12,'sine',.04,.02); },
-  fanfare:()=>{ playTone(740,.12,'square',.06); playTone(988,.16,'square',.06,.08); playTone(1318,.18,'square',.06,.18); }
+  fanfare:()=>{ playTone(740,.12,'square',.06); playTone(988,.16,'square',.06,.08); playTone(1318,.18,'square',.06,.18); },
+
+  // NEW: banner open/close
+  bannerWhoosh: ()=>{ playTone(220,.08,'sine',.05); playTone(440,.12,'triangle',.06,.02); },
+  bannerThud:   ()=>{ playTone(90,.12,'sine',.07,.02); }
 };
 /* ambience loop */
 function toggleAmbience(on){
@@ -350,8 +373,26 @@ function flyToHand(card, toEl, faceUp=true, delay=0){
   });
 }
 
-/* FX utilities */
-function tableFlash(kind){ table.style.animation='none'; void table.offsetWidth; const map={win:'flashWin', lose:'flashLose', push:'flashPush'}; table.style.animation=`${map[kind]} .6s ease`; setTimeout(()=>table.style.animation='none',640); }
+/* Outcome Banner helpers */
+const outcomeEl = document.getElementById('outcome');
+const outcomeTitle = document.getElementById('outcomeTitle');
+const outcomeSub = document.getElementById('outcomeSub');
+function showOutcome(kind, title, sub){
+  outcomeEl.classList.remove('win','lose','push','show');
+  outcomeEl.classList.add(kind);
+  outcomeTitle.textContent = title;
+  outcomeSub.textContent = sub || '';
+  outcomeEl.classList.add('show');
+  sfx.bannerWhoosh();
+}
+function hideOutcome(){
+  outcomeEl.classList.remove('show');
+  setTimeout(()=>{ outcomeEl.classList.remove('win','lose','push'); }, 250);
+  sfx.bannerThud();
+}
+
+/* FX helpers */
+function tableFlash(kind){ table.classList.remove('win','lose','push'); void table.offsetWidth; table.classList.add(kind); setTimeout(()=>table.classList.remove(kind),800); }
 function sweepLight(){ table.classList.add('sweep'); setTimeout(()=>table.classList.remove('sweep'),1600); }
 function cameraShake(){ table.classList.add('shake'); setTimeout(()=>table.classList.remove('shake'),420); }
 function confettiBurst(){
@@ -380,7 +421,7 @@ function chipFly(fromEl, toEl, count=10, positive=true){
   }
 }
 
-/* Heartbeat (16–20) */
+/* Heartbeat cue (16–20) */
 function startHeartbeat(){ stopHeartbeat(); const beat=()=>{ if(muted) return; playTone(120,.05,'sine',.035); setTimeout(()=>playTone(90,.06,'sine',.03),110); }; heartbeatTimer=setInterval(beat,750); }
 function stopHeartbeat(){ if(heartbeatTimer){ clearInterval(heartbeatTimer); heartbeatTimer=null; } }
 
@@ -451,21 +492,46 @@ function finalizeVoucher(){
   codeBox.style.display='inline-block'; codeBox.textContent=CODE; copyBtn.style.display='inline-block';
   try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE, ts:Date.now()})); }catch(e){}
 }
+
+/* Settle with banner + sounds */
 function settle(kind){
   stopHeartbeat();
   inRound=false; hitBtn.disabled=true; standBtn.disabled=true; doubleBtn.disabled=true; dealBtn.disabled=false;
 
+  const p = val(player), d = val(dealer);
+  const sub = `Player ${p} • Dealer ${d}`;
+
+  // Clear previous accent class and banner state
+  table.classList.remove('win','lose','push');
+
   const bankEl = bankVal.closest('.pill');
+
   if(kind==='win'){
-    setStatus('You win!','win'); sfx.win(); sfx.fanfare(); confettiBurst(); tableFlash('win'); chipFly(betCircle, bankEl, 14, true); payout('win'); finalizeVoucher(); sweepLight();
+    setStatus('You win!','win');
+    showOutcome('win', 'YOU WIN', sub);
+    sfx.win(); sfx.fanfare(); confettiBurst(); tableFlash('win');
+    chipFly(betCircle, bankEl, 14, true); payout('win'); finalizeVoucher();
   }else if(kind==='win-bj'){
-    setStatus('Blackjack! 3:2','win'); sfx.win(); sfx.fanfare(); confettiBurst(); tableFlash('win'); chipFly(betCircle, bankEl, 16, true); payout('win-bj'); finalizeVoucher(); sweepLight();
+    setStatus('Blackjack! 3:2','win');
+    showOutcome('win', 'BLACKJACK!', sub);
+    sfx.win(); sfx.fanfare(); confettiBurst(); tableFlash('win');
+    chipFly(betCircle, bankEl, 16, true); payout('win-bj'); finalizeVoucher();
   }else if(kind==='lose'){
-    setStatus('Dealer wins','lose'); sfx.lose(); sfx.crowdOof(); tableFlash('lose'); cameraShake(); chipFly(betCircle, shoeEl, 12, false);
+    setStatus('Dealer wins','lose');
+    showOutcome('lose', 'DEALER WINS', sub);
+    sfx.lose(); sfx.crowdOof(); tableFlash('lose'); cameraShake();
+    chipFly(betCircle, shoeEl, 12, false);
   }else{
-    setStatus('Push','push'); sfx.push(); tableFlash('push'); sweepLight(); payout('push');
+    setStatus('Push','push');
+    showOutcome('push', 'PUSH', sub);
+    sfx.push(); tableFlash('push'); payout('push');
   }
+
+  // Auto-hide banner after a moment (remove if you want it sticky)
+  setTimeout(hideOutcome, 1700);
 }
+
+/* Bust check */
 function bustCheck(){
   const v=val(player);
   if(v>21){ setStatus('Bust! Dealer wins','lose'); sfx.lose(); settle('lose'); return true; }
