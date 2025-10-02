@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>Live — Mini Blackjack (Cinematic)</title>
+<title>Live — Mini Blackjack (Cinematic · Dealer Reveal + 5-card cap)</title>
 <meta name="theme-color" content="#0a0f1e"/>
 <style>
   :root{
@@ -203,8 +203,12 @@ const fx = document.getElementById('fx');
 const muteBtn = document.getElementById('muteBtn');
 const ambBtn = document.getElementById('ambBtn');
 
+/* ===== Config (you can tweak these) ===== */
+const DECKS = 6;
+const MAX_CARDS_PLAYER = 5;       // Cap player at 5 cards (set to Infinity for no cap)
+const FIVE_CARD_CHARLIE = false;  // If true: 5 cards <=21 is auto-win
+
 /* ===== State ===== */
-const DECKS=6;
 let shoe=[], discard=0;
 let dealer=[], player=[];
 let hiddenDealerCard=null, dealerHidden=true;
@@ -246,16 +250,14 @@ const sfx={
   crowdOof:()=>{ noise(.22,.06,'lowpass',380,.8); playTone(220,.12,'sine',.04,.02); },
   fanfare:()=>{ playTone(740,.12,'square',.06); playTone(988,.16,'square',.06,.08); playTone(1318,.18,'square',.06,.18); }
 };
-/* ambience loop (very subtle) */
+/* ambience loop (subtle) */
 function toggleAmbience(on){
   if(muted) on=false;
   const ctx=ac();
   if(on && !audio.amb){
     const buffer=ctx.createBuffer(1, ctx.sampleRate*2.5, ctx.sampleRate);
     const data=buffer.getChannelData(0);
-    for(let i=0;i<data.length;i++){ // brown-ish
-      const r=(Math.random()*2-1); data[i]=(data[i-1]||0)*0.98 + r*0.02;
-    }
+    for(let i=0;i<data.length;i++){ const r=(Math.random()*2-1); data[i]=(data[i-1]||0)*0.98 + r*0.02; }
     const src=ctx.createBufferSource(); src.loop=true; src.buffer=buffer;
     const lp=ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=600; lp.Q.value=0.2;
     const g=ctx.createGain(); g.gain.value=.02;
@@ -267,7 +269,7 @@ function toggleAmbience(on){
   }
 }
 
-/* ===== Cards, shoe, values ===== */
+/* ===== Cards & shoe ===== */
 function freshShoe(){
   const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
   const suits=['♠','♥','♦','♣']; let d=[];
@@ -349,21 +351,44 @@ rebetBtn.addEventListener('click',()=>{ if(inRound) return; if(lastBet>0 && bank
 betMaxBtn.addEventListener('click',()=>{ if(inRound) return; if(bank<=0) return; const v=bank; bank=0; bet+=v; betHistory.push(v); renderBankBet(); sfx.chip(); });
 
 /* Flow */
-function resetHands(){ dealer=[]; player=[]; dealerHidden=true; hiddenDealerCard=null; dealerEl.querySelectorAll('.playing').forEach(n=>n.remove()); playerEl.querySelectorAll('.playing').forEach(n=>n.remove()); updateScores(); }
-function flipDealerHole(){ if(!hiddenDealerCard) return; const first=dealerEl.querySelector('.playing'); if(first){ sfx.flip(); first.classList.toggle('is-back'); } dealerHidden=false; updateScores(); }
-function dealerPeek(){ const first=dealerEl.querySelector('.playing'); if(first){ first.style.animation='peekUp .4s ease'; setTimeout(()=>first.style.animation='',420); } }
+function resetHands(){
+  dealer=[]; player=[]; dealerHidden=true; hiddenDealerCard=null;
+  dealerEl.querySelectorAll('.playing').forEach(n=>n.remove());
+  playerEl.querySelectorAll('.playing').forEach(n=>n.remove());
+  updateScores();
+}
+function flipDealerHole(){
+  if(!hiddenDealerCard) return;
+  const first=dealerEl.querySelector('.playing');
+  if(first){ sfx.flip(); first.classList.toggle('is-back'); }
+  dealerHidden=false; updateScores();
+}
+function dealerPeek(){
+  const first=dealerEl.querySelector('.playing');
+  if(first){ first.style.animation='peekUp .4s ease'; setTimeout(()=>first.style.animation='',420); }
+}
 
 async function initialDeal(){
   stopHeartbeat();
   resetHands();
   if(bet<=0){ setStatus('Place a bet first'); return false; }
   setChoice('live'); inRound=true; canDouble=false; dealBtn.disabled=true; hitBtn.disabled=false; standBtn.disabled=false; doubleBtn.disabled=true;
-  // deal sequence
+
+  // Player 1 (face up)
   const p1=draw(); player.push(p1); await flyToHand(p1, playerEl, true, 40);
-  const d1=draw(); dealer.push(d1); hiddenDealerCard=d1; await flyToHand({r:'x',s:''}, dealerEl, false, 40);
+
+  // Dealer 1 (REAL card face-down — no more placeholder 'X')
+  const d1=draw(); dealer.push(d1); hiddenDealerCard=d1; await flyToHand(d1, dealerEl, false, 40);
+
+  // Fun peek
   dealerPeek();
+
+  // Player 2 (face up)
   const p2=draw(); player.push(p2); await flyToHand(p2, playerEl, true, 40);
+
+  // Dealer 2 (face up)
   const d2=draw(); dealer.push(d2); await flyToHand(d2, dealerEl, true, 40);
+
   canDouble=true; doubleBtn.disabled=false; lastBet = bet;
 
   updateScores();
@@ -395,11 +420,41 @@ function finalizeVoucher(){
   codeBox.style.display='inline-block'; codeBox.textContent=CODE; copyBtn.style.display='inline-block';
   try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE, ts:Date.now()})); }catch(e){}
 }
+
+/* Table FX & settle */
+function tableFlash(kind){ table.style.animation='none'; void table.offsetWidth; const map={win:'flashWin', lose:'flashLose', push:'flashPush'}; table.style.animation=`${map[kind]} .5s ease`; setTimeout(()=>table.style.animation='none',520); }
+function sweepLight(){ table.classList.add('sweep'); setTimeout(()=>table.classList.remove('sweep'),1500); }
+function cameraShake(){ table.classList.add('shake'); setTimeout(()=>table.classList.remove('shake'),400); }
+function confettiBurst(colorize=true){
+  const rect=table.getBoundingClientRect();
+  for(let i=0;i<28;i++){
+    const s=document.createElement('div'); s.className='spark';
+    const x = rect.width*0.5 + (Math.random()*200-100);
+    const y = rect.height*0.2 + (Math.random()*40-20);
+    s.style.left=x+'px'; s.style.top=y+'px';
+    s.style.background=colorize?`hsl(${Math.random()*360},80%,70%)`:'#fff';
+    fx.appendChild(s);
+    const dx=(Math.random()*2-1)*220, dy=260+Math.random()*160, rot=(Math.random()*720-360);
+    s.animate([{transform:`translate(0,0) rotate(0deg)`,opacity:1},{transform:`translate(${dx}px,${dy}px) rotate(${rot}deg)`,opacity:0}],{duration:900+Math.random()*500,easing:'cubic-bezier(.2,.7,.2,1)'}).onfinish=()=>s.remove();
+  }
+}
+function chipFly(fromEl, toEl, count=10, positive=true){
+  const fr=fromEl.getBoundingClientRect(), tr=toEl.getBoundingClientRect(), fxr=fx.getBoundingClientRect();
+  for(let i=0;i<count;i++){
+    const chip=document.createElement('div');
+    chip.style.position='absolute'; chip.style.width='14px'; chip.style.height='14px'; chip.style.borderRadius='50%';
+    chip.style.background=positive?'#ffd86a':'#ff7a90'; chip.style.boxShadow='0 0 8px rgba(0,0,0,.5)';
+    const sx=(fr.left+fr.width/2)-fxr.left + (Math.random()*30-15), sy=(fr.top+fr.height/2)-fxr.top + (Math.random()*30-15);
+    const ex=(tr.left+tr.width/2)-fxr.left + (Math.random()*20-10), ey=(tr.top+tr.height/2)-fxr.top + (Math.random()*20-10);
+    chip.style.transform=`translate(${sx}px,${sy}px)`; fx.appendChild(chip);
+    chip.animate([{transform:`translate(${sx}px,${sy}px) scale(.9)`},{transform:`translate(${ex}px,${ey}px) scale(1)`}],{duration:400+Math.random()*200,easing:'cubic-bezier(.22,.8,.24,1)'}).onfinish=()=>chip.remove();
+  }
+}
 function settle(kind){
   stopHeartbeat();
   inRound=false; hitBtn.disabled=true; standBtn.disabled=true; doubleBtn.disabled=true; dealBtn.disabled=false;
 
-  const bankEl = bankVal.closest('.pill'); // for chip fly target
+  const bankEl = bankVal.closest('.pill');
   if(kind==='win'){
     setStatus('You win!', 'win'); sfx.win(); sfx.fanfare(); confettiBurst(true); tableFlash('win'); chipFly(betCircle, bankEl, 14, true); payout('win'); finalizeVoucher(); sweepLight();
   }else if(kind==='win-bj'){
@@ -418,13 +473,42 @@ function bustCheck(){
 
 /* Events */
 dealBtn.addEventListener('click', async ()=>{ if(inRound) return; if(bet<=0){ setStatus('Place a bet first'); return; } sfx.click(); await initialDeal(); });
-hitBtn.addEventListener('click', async ()=>{ if(!inRound) return; sfx.click(); const c=draw(); player.push(c); await flyToHand(c, playerEl, true, 30); canDouble=false; doubleBtn.disabled=true; if(!bustCheck()) setStatus('Hit or Stand'); const pv=val(player); if(pv>=16 && pv<=20) startHeartbeat(); else stopHeartbeat(); });
+hitBtn.addEventListener('click', async ()=>{
+  if(!inRound) return; sfx.click();
+
+  // 5-card cap
+  if (player.length >= MAX_CARDS_PLAYER) {
+    setStatus(`Max ${MAX_CARDS_PLAYER} cards — Stand`, '');
+    hitBtn.disabled = true;
+    return;
+  }
+
+  const c=draw(); player.push(c);
+  await flyToHand(c, playerEl, true, 30);
+
+  canDouble=false; 
+  doubleBtn.disabled=true;
+
+  // Optional 5-Card Charlie
+  if (FIVE_CARD_CHARLIE && player.length >= 5 && val(player) <= 21) {
+    setStatus('5-Card Charlie! You win', 'win');
+    settle('win');
+    return;
+  }
+
+  if(!bustCheck()){
+    setStatus('Hit or Stand');
+    const pv=val(player);
+    if(pv>=16 && pv<=20) startHeartbeat(); else stopHeartbeat();
+  }
+});
 standBtn.addEventListener('click', async ()=>{ if(!inRound) return; sfx.click(); stopHeartbeat(); await dealerTurn(); const p=val(player), d=val(dealer); if(d>21 || p>d) settle('win'); else if(p===d) settle('push'); else settle('lose'); });
 doubleBtn.addEventListener('click', async ()=>{
   if(!inRound || !canDouble) return;
   if(bank < bet){ setStatus('Not enough bank to Double','lose'); return; }
   sfx.click(); bank -= bet; bet += bet; renderBankBet();
-  const c=draw(); player.push(c); await flyToHand(c, playerEl, true, 30);
+  const c=draw(); player.push(c);
+  await flyToHand(c, playerEl, true, 30);
   if(bustCheck()) return;
   await dealerTurn(); const p=val(player), d=val(dealer);
   if(d>21 || p>d) settle('win'); else if(p===d) settle('push'); else settle('lose');
