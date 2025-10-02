@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Live — Mini Craps</title>
+<style>
+  :root{--ink:#eaf2ff;--mut:#9fb0d9;--g1:#71e1ff;--g2:#25c3ff}
+  *{box-sizing:border-box}html,body{height:100%}
+  body{margin:0;color:var(--ink);background:radial-gradient(1200px 800px at 70% -10%,#18244d 0%,#0a0f1e 55%,#05070d 100%);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial;display:flex;align-items:center;justify-content:center;padding:20px}
+  a.back{position:fixed;left:12px;top:12px;z-index:10;text-decoration:none;background:rgba(0,0,0,.5);padding:8px 12px;border-radius:10px;color:#fff;font-weight:700}
+  .wrap{width:min(920px,96vw)}
+  .card{position:relative;border-radius:22px;padding:18px;background:linear-gradient(180deg,#1b2a56,#0f1832);outline:1px solid rgba(255,255,255,.08);box-shadow:0 16px 60px rgba(0,0,0,.55)}
+  h1{margin:0 0 8px;font-size:20px;font-weight:900;text-transform:uppercase}
+  p.sub{margin:0 6px 16px;color:var(--mut)}
+  .felt{border-radius:18px;background:radial-gradient(closest-side,#13325f,#0e1f43);outline:1px solid rgba(255,255,255,.08);box-shadow:inset 0 0 60px rgba(0,0,0,.6);padding:16px;text-align:center}
+  .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .btn{border:0;border-radius:12px;padding:10px 14px;font-weight:900;cursor:pointer;background:linear-gradient(to right,var(--g1),var(--g2));color:#061018;box-shadow:0 0 18px rgba(113,225,255,.5), inset 0 -3px 0 rgba(0,0,0,.35)}
+  .ghost{background:#2b2b2b;color:#fff}
+  .dice{display:flex;gap:12px;justify-content:center;margin:12px 0}
+  .die{width:64px;height:64px;background:#fff;border-radius:10px;display:grid;place-items:center;color:#111;font-weight:900;box-shadow:0 8px 20px rgba(0,0,0,.35)}
+  .status{color:#ffd86a;font-weight:900;text-shadow:0 0 10px rgba(255,216,106,.6);margin-top:6px}
+  .code{display:none;margin-top:10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.5px;padding:10px 12px;border-radius:12px;background:#0a0d1a;outline:1px dashed rgba(160,220,255,.35)}
+  .copy{display:none;margin-top:8px;border:0;border-radius:10px;padding:8px 10px;font-weight:900;background:#2b2b2b;color:#fff}
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Back</a>
+  <div class="wrap">
+    <div class="card">
+      <h1>Mini Craps — Pass Line</h1>
+      <p class="sub">Choose <b>Pass</b> or <b>Don’t Pass</b>. Come-out &rarr; point cycle. Your first bet locks you to <b>Live</b>.</p>
+
+      <div class="felt">
+        <div class="row">
+          <button class="btn" id="betPass">Bet Pass</button>
+          <button class="btn ghost" id="betDont">Bet Don’t Pass</button>
+        </div>
+
+        <div class="dice"><div class="die" id="d1">–</div><div class="die" id="d2">–</div></div>
+        <div class="row"><button class="btn" id="rollBtn" disabled>Roll</button></div>
+        <div class="status" id="status">Place your bet</div>
+
+        <div class="code" id="codeBox">LIVE-CRAPS-XXXX</div>
+        <button class="copy" id="copyBtn">Copy Code</button>
+      </div>
+    </div>
+  </div>
+
+<script src="assets/common.js"></script>
+<script>
+/* Fallback if assets/common.js is missing */
+if (typeof window.getChoice !== 'function') { window.getChoice = () => {try{return localStorage.getItem('realm_choice')}catch(e){return null}} }
+if (typeof window.setChoice !== 'function') { window.setChoice = (v) => {try{localStorage.setItem('realm_choice',v)}catch(e){}} }
+
+const CLAIM_KEY='live_craps_claimed_v1', CODE='LIVE-PASS-WIN';
+
+const c=getChoice(); if(c && c!=='live'){ alert('You already started Slot. Live is locked for this event.'); location.replace('index.html'); }
+
+/* DOM */
+const betPass=document.getElementById('betPass'), betDont=document.getElementById('betDont'), rollBtn=document.getElementById('rollBtn');
+const d1El=document.getElementById('d1'), d2El=document.getElementById('d2'), statusEl=document.getElementById('status');
+const codeBox=document.getElementById('codeBox'), copyBtn=document.getElementById('copyBtn');
+
+/* State */
+let bet=null, point=null, resolved=false, comeOut=true;
+
+/* finalize */
+function finalize(code){ codeBox.style.display='block'; codeBox.textContent=code; copyBtn.style.display='inline-block'; }
+
+/* PRIOR CLAIM */
+try{
+  const prior=localStorage.getItem(CLAIM_KEY);
+  if(prior){ finalize(JSON.parse(prior).code||CODE); rollBtn.disabled=true; }
+}catch(e){}
+
+/* Bets */
+function setBet(b){
+  if(bet) return;
+  setChoice('live');
+  bet=b; rollBtn.disabled=false; statusEl.textContent='Tap Roll';
+  betPass.disabled=true; betDont.disabled=true;
+}
+betPass.addEventListener('click',()=>setBet('pass'));
+betDont.addEventListener('click',()=>setBet('dont'));
+
+/* Roll flow */
+function roll(){
+  if(resolved) return;
+  const a=1+((Math.random()*6)|0), b=1+((Math.random()*6)|0), s=a+b;
+  d1El.textContent=a; d2El.textContent=b;
+
+  if(comeOut){
+    if(bet==='pass'){
+      if(s===7||s===11){ win(); return; }
+      if([2,3,12].includes(s)){ lose(); return; }
+    }else{ // don't pass
+      if([2,3].includes(s)){ win(); return; }
+      if([7,11].includes(s)){ lose(); return; }
+      if(s===12){ statusEl.textContent='Push on 12 — roll again'; return; }
+    }
+    point=s; comeOut=false; statusEl.textContent=`Point is ${point}. Roll until ${point} or 7.`;
+  }else{
+    if(s===point){ (bet==='pass') ? win() : lose(); }
+    else if(s===7){ (bet==='pass') ? lose() : win(); }
+    else{ statusEl.textContent=`Rolling… point ${point}`; }
+  }
+}
+rollBtn.addEventListener('click', roll);
+
+/* outcomes */
+function win(){
+  resolved=true; statusEl.textContent='You win!';
+  finalize(CODE); try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE, ts:Date.now()})); }catch(e){}
+  rollBtn.disabled=true;
+}
+function lose(){
+  resolved=true; statusEl.textContent='Lost this round';
+  codeBox.style.display='block'; codeBox.textContent='TRY-AGAIN-NEXT-TIME';
+  rollBtn.disabled=true;
+}
+
+/* copy */
+copyBtn.addEventListener('click',()=>{
+  const t=codeBox.textContent.trim(); if(!t)return;
+  navigator.clipboard.writeText(t).then(()=>{ copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy Code',1200);});
+});
+</script>
+</body>
+</html>
