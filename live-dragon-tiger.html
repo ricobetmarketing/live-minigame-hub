@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Live — Dragon Tiger</title>
+<style>
+  :root{--ink:#eaf2ff;--mut:#9fb0d9;--g1:#71e1ff;--g2:#25c3ff}
+  *{box-sizing:border-box}html,body{height:100%}
+  body{margin:0;color:var(--ink);background:radial-gradient(1200px 800px at 70% -10%,#18244d 0%,#0a0f1e 55%,#05070d 100%);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial;display:flex;align-items:center;justify-content:center;padding:20px}
+  a.back{position:fixed;left:12px;top:12px;z-index:10;text-decoration:none;background:rgba(0,0,0,.5);padding:8px 12px;border-radius:10px;color:#fff;font-weight:700}
+  .wrap{width:min(920px,96vw)}
+  .card{position:relative;border-radius:22px;padding:18px;background:linear-gradient(180deg,#1b2a56,#0f1832);outline:1px solid rgba(255,255,255,.08);box-shadow:0 16px 60px rgba(0,0,0,.55)}
+  h1{margin:0 0 8px;font-size:20px;font-weight:900;text-transform:uppercase}
+  p.sub{margin:0 6px 16px;color:var(--mut)}
+  .arena{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .side{border-radius:18px;background:radial-gradient(closest-side,#13325f,#0e1f43);outline:1px solid rgba(255,255,255,.08);box-shadow:inset 0 0 60px rgba(0,0,0,.6);padding:12px;min-height:180px;display:grid;gap:8px}
+  .head{display:flex;justify-content:space-between;align-items:center}
+  .pick{border:0;border-radius:999px;padding:8px 12px;font-weight:900;cursor:pointer;background:linear-gradient(to right,var(--g1),var(--g2));color:#061018;box-shadow:0 0 18px rgba(113,225,255,.5), inset 0 -3px 0 rgba(0,0,0,.35)}
+  .playing-card{width:82px;height:112px;border-radius:12px;background:radial-gradient(200px 120px at 50% -20%,#fff,#e9eefc 40%,#c8d4f3 100%);outline:2px solid #e5ecff;box-shadow:0 10px 24px rgba(0,0,0,.35);display:grid;place-items:center;font-weight:900;color:#1a2050;margin:6px auto}
+  .down{background:linear-gradient(180deg,#0e1a3a,#0a1329);outline:1px solid rgba(255,255,255,.08)}
+  .status{text-align:center;color:#ffd86a;font-weight:900;text-shadow:0 0 10px rgba(255,216,106,.6);margin-top:8px}
+  .code{display:none;margin-top:10px;text-align:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.5px;padding:10px 12px;border-radius:12px;background:#0a0d1a;outline:1px dashed rgba(160,220,255,.35)}
+  .copy{display:none;margin-top:8px;border:0;border-radius:10px;padding:8px 10px;font-weight:900;background:#2b2b2b;color:#fff;display:inline-block}
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Back</a>
+  <div class="wrap">
+    <div class="card">
+      <h1>Dragon Tiger</h1>
+      <p class="sub">Pick a side, draw 1 card each. Highest rank wins (A low). Your first pick locks you to <b>Live</b>.</p>
+
+      <div class="arena">
+        <div class="side" id="dragon">
+          <div class="head"><b>🐉 Dragon</b><button class="pick" data-side="dragon">Pick Dragon</button></div>
+          <div class="playing-card down" id="dCard"></div>
+        </div>
+        <div class="side" id="tiger">
+          <div class="head"><b>🐯 Tiger</b><button class="pick" data-side="tiger">Pick Tiger</button></div>
+          <div class="playing-card down" id="tCard"></div>
+        </div>
+      </div>
+
+      <div class="status" id="status">Choose your side</div>
+      <div class="code" id="codeBox">LIVE-DT-XXXX</div>
+      <button class="copy" id="copyBtn" style="display:none">Copy Code</button>
+    </div>
+  </div>
+
+<script src="assets/common.js"></script>
+<script>
+/* Fallback if assets/common.js is missing */
+if (typeof window.getChoice !== 'function') { window.getChoice = () => {try{return localStorage.getItem('realm_choice')}catch(e){return null}} }
+if (typeof window.setChoice !== 'function') { window.setChoice = (v) => {try{localStorage.setItem('realm_choice',v)}catch(e){}} }
+
+const CLAIM_KEY='live_dt_claimed_v1', CODE='LIVE-DRAGON-TIGER';
+
+const c=getChoice(); if(c && c!=='live'){ alert('You already started Slot. Live is locked for this event.'); location.replace('index.html'); }
+
+/* DOM */
+const statusEl=document.getElementById('status'), dEl=document.getElementById('dCard'), tEl=document.getElementById('tCard');
+const codeBox=document.getElementById('codeBox'), copyBtn=document.getElementById('copyBtn');
+
+const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+function draw(){ return ranks[(Math.random()*ranks.length)|0]; }
+function rankValue(r){ if(r==='A') return 1; if(['J','Q','K'].includes(r)) return 10+['J','Q','K'].indexOf(r)+1; return Number(r); }
+
+let picked=false;
+
+/* finalize */
+function finalize(code){
+  codeBox.style.display='block'; codeBox.textContent=code; copyBtn.style.display='inline-block';
+}
+
+/* PRIOR CLAIM */
+try{
+  const prior=localStorage.getItem(CLAIM_KEY);
+  if(prior){ finalize(JSON.parse(prior).code||CODE); }
+}catch(e){}
+
+/* Play */
+document.querySelectorAll('.pick').forEach(b=>b.addEventListener('click',()=>{
+  if(picked) return;
+  setChoice('live'); picked=true;
+
+  const d=draw(), t=draw();
+  dEl.classList.remove('down'); dEl.textContent=d;
+  tEl.classList.remove('down'); tEl.textContent=t;
+
+  const dv=rankValue(d), tv=rankValue(t);
+  let winSide = dv>tv ? 'dragon' : tv>dv ? 'tiger' : 'tie';
+  const you = b.dataset.side;
+
+  if(winSide==='tie'){
+    statusEl.textContent='Tie — no voucher';
+    codeBox.style.display='block'; codeBox.textContent='TRY-AGAIN-NEXT-TIME';
+    return;
+  }
+
+  const win = (you===winSide);
+  statusEl.textContent = win ? 'You win!' : 'You chose the other side';
+
+  if(win){
+    try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE, ts:Date.now()})); }catch(e){}
+    finalize(CODE);
+  } else {
+    codeBox.style.display='block'; codeBox.textContent='TRY-AGAIN-NEXT-TIME';
+  }
+}));
+
+/* copy */
+copyBtn.addEventListener('click',()=>{
+  const t=codeBox.textContent.trim(); if(!t)return;
+  navigator.clipboard.writeText(t).then(()=>{ copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy Code',1200);});
+});
+</script>
+</body>
+</html>
