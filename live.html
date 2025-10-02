@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Live — Baccarat Squeeze (Lite)</title>
+<style>
+  :root{--ink:#eaf2ff;--mut:#9fb0d9;--g1:#71e1ff;--g2:#25c3ff}
+  *{box-sizing:border-box} html,body{height:100%}
+  body{margin:0;color:var(--ink);background:radial-gradient(1200px 800px at 70% -10%,#18244d 0%,#0a0f1e 55%,#05070d 100%);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial;display:flex;align-items:center;justify-content:center;padding:18px}
+  a.back{position:fixed;left:12px;top:12px;z-index:10;text-decoration:none;background:rgba(0,0,0,.5);padding:8px 12px;border-radius:10px;color:#fff;font-weight:700}
+  .wrap{width:min(980px,96vw)}
+  .card{position:relative;border-radius:22px;padding:18px;background:linear-gradient(180deg,#1b2a56,#0f1832);outline:1px solid rgba(255,255,255,.08);box-shadow:0 16px 60px rgba(0,0,0,.55)}
+  h1{margin:0 0 8px;font-size:20px;font-weight:900;text-transform:uppercase}
+  p.sub{margin:0 6px 16px;color:var(--mut)}
+  .felt{border-radius:18px;background:radial-gradient(closest-side,#13325f,#0e1f43);outline:1px solid rgba(255,255,255,.08);box-shadow:inset 0 0 60px rgba(0,0,0,.6);padding:14px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center}
+  .btn{border:0;border-radius:12px;padding:10px 14px;font-weight:900;cursor:pointer;background:linear-gradient(to right,var(--g1),var(--g2));color:#061018;box-shadow:0 0 18px rgba(113,225,255,.5), inset 0 -3px 0 rgba(0,0,0,.35)}
+  .ghost{background:#2b2b2b;color:#fff}
+  .zone{display:grid;gap:8px;grid-template-columns:1fr 1fr;align-items:center}
+  .side{border-radius:16px;background:rgba(0,0,0,.25);padding:12px;outline:1px solid rgba(255,255,255,.08)}
+  .side h3{margin:0 0 6px;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+  .hand{display:flex;gap:10px;justify-content:center;min-height:120px}
+  .playing-card{position:relative;width:86px;height:120px;border-radius:12px;background:radial-gradient(220px 140px at 50% -20%,#fff,#e9eefc 40%,#c8d4f3 100%);outline:2px solid #e5ecff;box-shadow:0 10px 24px rgba(0,0,0,.35);display:grid;place-items:center;font-weight:900;color:#1a2050;overflow:hidden}
+  .face{filter:blur(3px)} .playing-card.show .face{filter:none;transition:filter .2s}
+  .cover{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(10,16,30,.75),rgba(10,16,30,.55));}
+  .corners{position:absolute;inset:0}
+  .corner{position:absolute;width:40px;height:40px;background:rgba(10,16,30,.92);outline:1px solid rgba(255,255,255,.06);opacity:.95}
+  .corner.off{opacity:0;pointer-events:none;transition:opacity .15s}
+  .tl{left:0;top:0;clip-path:polygon(0 0,100% 0,0 100%)} .tr{right:0;top:0;clip-path:polygon(0 0,100% 0,100% 100%)} 
+  .bl{left:0;bottom:0;clip-path:polygon(0 0,100% 100%,0 100%)} .br{right:0;bottom:0;clip-path:polygon(100% 0,100% 100%,0 100%)}
+  .score{text-align:center;color:#ffd86a;font-weight:900;text-shadow:0 0 10px rgba(255,216,106,.6);margin-top:6px}
+  .status{text-align:center;margin-top:10px;color:#9fb0d9}
+  .code{display:none;margin-top:10px;text-align:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.5px;padding:10px 12px;border-radius:12px;background:#0a0d1a;outline:1px dashed rgba(160,220,255,.35)}
+  .copy{display:none;margin-top:8px;border:0;border-radius:10px;padding:8px 10px;font-weight:900;background:#2b2b2b;color:#fff}
+</style>
+</head>
+<body>
+  <a class="back" href="index.html">← Back</a>
+  <div class="wrap">
+    <div class="card">
+      <h1>Baccarat Squeeze (Lite)</h1>
+      <p class="sub">Pick a side, then “squeeze” the corners to reveal. Highest total (mod 10) wins. Your first bet locks you to <b>Live</b>.</p>
+
+      <div class="felt">
+        <div class="row" style="margin-bottom:8px">
+          <button class="btn" id="betPlayer">Bet Player</button>
+          <button class="btn ghost" id="betBanker">Bet Banker</button>
+          <button class="btn" id="dealBtn" disabled>Deal</button>
+        </div>
+
+        <div class="zone">
+          <div class="side" id="playerSide">
+            <h3>🂡 Player <span id="pScore">—</span></h3>
+            <div class="hand" id="pHand"></div>
+          </div>
+          <div class="side" id="bankerSide">
+            <h3>🂱 Banker <span id="bScore">—</span></h3>
+            <div class="hand" id="bHand"></div>
+          </div>
+        </div>
+
+        <div class="score" id="result">Place your bet</div>
+        <div class="status" id="hint">Tap each card’s corners to peel. Reveal at least 3 corners to flip.</div>
+
+        <div class="code" id="codeBox">LIVE-BAC-XXXX</div>
+        <button class="copy" id="copyBtn">Copy Code</button>
+      </div>
+    </div>
+  </div>
+
+<script src="assets/common.js"></script>
+<script>
+const CLAIM_KEY='live_bac_squeeze_claimed_v1';
+const CODE_WIN='LIVE-BAC-WIN', CODE_LOSE='TRY-AGAIN-NEXT-TIME';
+const prior=localStorage.getItem(CLAIM_KEY); if(prior){ finalize(JSON.parse(prior).code||CODE_WIN); }
+
+const c=getChoice(); if(c && c!=='live'){ alert('You already started Slot. Live is locked for this event.'); location.replace('index.html'); }
+
+const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], suits=['♠','♥','♦','♣'];
+function rnd(a){ return a[(Math.random()*a.length)|0]; }
+function val(r){ if(r==='A')return 1; if(['10','J','Q','K'].includes(r)) return 0; return Number(r); }
+
+let bet=null, dealt=false, player=[], banker=[];
+const betPlayer=document.getElementById('betPlayer'), betBanker=document.getElementById('betBanker'), dealBtn=document.getElementById('dealBtn');
+const pHand=document.getElementById('pHand'), bHand=document.getElementById('bHand'), pScore=document.getElementById('pScore'), bScore=document.getElementById('bScore');
+const result=document.getElementById('result'), codeBox=document.getElementById('codeBox'), copyBtn=document.getElementById('copyBtn');
+
+betPlayer.addEventListener('click', ()=> choose('player'));
+betBanker.addEventListener('click', ()=> choose('banker'));
+
+function choose(side){
+  if(bet) return;
+  setChoice('live');
+  bet=side; dealBtn.disabled=false; result.textContent='Bet on ' + (side==='player'?'Player':'Banker') + ' — tap Deal';
+  betPlayer.disabled=true; betBanker.disabled=true;
+}
+
+dealBtn.addEventListener('click', ()=>{
+  if(dealt) return; dealt=true;
+  player = [dealCard(), dealCard()];
+  banker = [dealCard(), dealCard()];
+  renderHand(pHand, player, 'p');
+  renderHand(bHand, banker, 'b');
+  result.textContent='Squeeze to reveal';
+});
+
+function dealCard(){ return { r: rnd(ranks), s: rnd(suits), shown:false, peel:0 }; }
+function score(hand){ return (hand.reduce((t,c)=>t+val(c.r),0))%10; }
+
+function renderHand(container, hand, prefix){
+  container.innerHTML='';
+  hand.forEach((c,idx)=>{
+    const el=document.createElement('div'); el.className='playing-card'; if(c.shown) el.classList.add('show');
+    el.innerHTML=`<div class="face">${c.r}${c.s}</div>
+      <div class="cover"></div>
+      <div class="corners">
+        <button class="corner tl"></button>
+        <button class="corner tr"></button>
+        <button class="corner bl"></button>
+        <button class="corner br"></button>
+      </div>`;
+    const corners=[...el.querySelectorAll('.corner')];
+    corners.forEach(btn=>btn.addEventListener('click',()=>{
+      if(c.shown) return;
+      if(!btn.classList.contains('off')){ btn.classList.add('off'); c.peel++; if(c.peel>=3){ c.shown=true; el.classList.add('show'); updateScores(); maybeFinish(); } }
+    }));
+    container.appendChild(el);
+  });
+}
+
+function updateScores(){
+  const ps = player.filter(c=>c.shown).length ? score(player) : '??';
+  const bs = banker.filter(c=>c.shown).length ? score(banker) : '??';
+  pScore.textContent = ps; bScore.textContent = bs;
+}
+
+function bothHandsShown(){
+  return player.every(c=>c.shown) && banker.every(c=>c.shown);
+}
+
+function maybeFinish(){
+  if(!bothHandsShown()) return;
+  const ps=score(player), bs=score(banker);
+  let winner = ps>bs ? 'player' : bs>ps ? 'banker' : 'tie';
+  if(winner==='tie'){ result.textContent='Tie — no voucher'; codeBox.style.display='block'; codeBox.textContent='TRY-AGAIN-NEXT-TIME'; return; }
+  const win = (bet===winner);
+  result.textContent = win ? 'You win!' : (winner==='player'?'Player wins':'Banker wins');
+  if(win){ finalize(CODE_WIN); localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE_WIN, ts:Date.now()})); }
+  else { codeBox.style.display='block'; codeBox.textContent=CODE_LOSE; }
+}
+
+function finalize(code){
+  codeBox.style.display='block'; codeBox.textContent=code; copyBtn.style.display='inline-block';
+}
+copyBtn.addEventListener('click',()=>{ const t=codeBox.textContent.trim(); if(!t)return; navigator.clipboard.writeText(t).then(()=>{ copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy Code',1200);});});
+</script>
+</body>
+</html>
