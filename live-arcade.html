@@ -20,7 +20,7 @@
     display:flex; align-items:center; justify-content:center; padding:18px; overflow:hidden;
   }
 
-  /* --- Ambient video (optional) --- */
+  /* --- Ambient video (real source) --- */
   #bg-video{
     position:fixed; inset:0; width:100%; height:100%; object-fit:cover; z-index:-3; opacity:.28;
     filter:saturate(1.2) contrast(1.05) blur(1px);
@@ -160,11 +160,11 @@
 </style>
 </head>
 <body>
-  <!-- Optional ambient background video (royalty-free blob). Replace src if you like. -->
-<video id="bg-video" autoplay loop muted playsinline preload="auto">
-  <source src="https://cdn.coverr.co/videos/coverr-looped-lights-720p.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+  <!-- Real ambient background video (free neon loop). Swap URL anytime. -->
+  <video id="bg-video" autoplay loop muted playsinline preload="auto">
+    <source src="https://cdn.coverr.co/videos/coverr-looped-lights-720p.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
 
   <canvas id="fx-bg"></canvas>
   <canvas id="fx-trails"></canvas>
@@ -551,7 +551,6 @@ function reelReveal(codeEl, copyBtnEl, finalCode, opts={}){
     if(sfxOn){ zapSfx(); }
   }
   function finalize(code){
-    // Reel animation
     reelReveal(codeBox, copyBtn, code, {spinMs:1100, slots:code.length, group:code});
     spinBtn.disabled=true; spun=true;
   }
