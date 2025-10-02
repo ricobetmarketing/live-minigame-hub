@@ -20,21 +20,15 @@
     display:flex; align-items:center; justify-content:center; padding:18px; overflow:hidden;
   }
 
-  /* --- Ambient video (real source) --- */
-  #bg-video{
-    position:fixed; inset:0; width:100%; height:100%; object-fit:cover; z-index:-3; opacity:.28;
-    filter:saturate(1.2) contrast(1.05) blur(1px);
-    pointer-events:none;
-  }
+ /* replace the existing z-index lines with these */
+#bg-video{ position:fixed; inset:0; width:100%; height:100%; object-fit:cover;
+  z-index:0; opacity:.28; filter:saturate(1.2) contrast(1.05) blur(1px); pointer-events:none; }
 
-  /* --- Ambient particles + trails + confetti --- */
-  #fx-bg, #fx-trails, #fx-confetti{position:fixed; inset:0; pointer-events:none}
-  #fx-bg{z-index:-2}
-  #fx-trails{z-index:-1; mix-blend-mode:screen}
-  #fx-confetti{z-index:0; mix-blend-mode:screen}
+#fx-bg{ position:fixed; inset:0; pointer-events:none; z-index:1 }
+#fx-trails{ position:fixed; inset:0; pointer-events:none; z-index:2; mix-blend-mode:screen }
+#fx-confetti{ position:fixed; inset:0; pointer-events:none; z-index:3; mix-blend-mode:screen }
 
-  .wrap{position:relative; z-index:1; width:min(1100px,96vw);}
-
+.wrap{ position:relative; z-index:4; }
   header{text-align:center; margin-bottom:12px}
   h1{margin:0 0 6px; font-size:clamp(22px,5vw,36px); font-weight:900; letter-spacing:.5px; text-transform:uppercase;
      background:linear-gradient(to right,var(--g1),var(--g2)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
@@ -160,7 +154,7 @@
 </style>
 </head>
 <body>
-  <!-- Real ambient background video (free neon loop). Swap URL anytime. -->
+  <!-- Real ambient background (free neon loop). Swap URL anytime. -->
 <video id="bg-video" autoplay loop muted playsinline preload="auto">
   <source src="https://cdn.coverr.co/videos/coverr-looped-lights-720p.mp4" type="video/mp4">
 </video>
