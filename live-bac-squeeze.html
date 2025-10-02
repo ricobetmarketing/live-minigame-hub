@@ -27,6 +27,7 @@
   .corners{position:absolute;inset:0}
   .corner{position:absolute;width:40px;height:40px;background:rgba(10,16,30,.92);outline:1px solid rgba(255,255,255,.06);opacity:.95}
   .corner.off{opacity:0;pointer-events:none;transition:opacity .15s}
+  .playing-card.show .corners{display:none} /* hide peel zones after reveal */
   .tl{left:0;top:0;clip-path:polygon(0 0,100% 0,0 100%)} .tr{right:0;top:0;clip-path:polygon(0 0,100% 0,100% 100%)} 
   .bl{left:0;bottom:0;clip-path:polygon(0 0,100% 100%,0 100%)} .br{right:0;bottom:0;clip-path:polygon(100% 0,100% 100%,0 100%)}
   .score{text-align:center;color:#ffd86a;font-weight:900;text-shadow:0 0 10px rgba(255,216,106,.6);margin-top:6px}
@@ -71,37 +72,97 @@
 
 <script src="assets/common.js"></script>
 <script>
-
-  /* Fallback in case assets/common.js is missing */
+/* Fallback if assets/common.js is missing */
 if (typeof window.getChoice !== 'function') {
   window.getChoice = function(){ try { return localStorage.getItem('realm_choice'); } catch(e){ return null; } };
 }
 if (typeof window.setChoice !== 'function') {
   window.setChoice = function(v){ try { localStorage.setItem('realm_choice', v); } catch(e){} };
 }
-  
+
 const CLAIM_KEY='live_bac_squeeze_claimed_v1';
 const CODE_WIN='LIVE-BAC-WIN', CODE_LOSE='TRY-AGAIN-NEXT-TIME';
-const prior=localStorage.getItem(CLAIM_KEY); if(prior){ finalize(JSON.parse(prior).code||CODE_WIN); }
 
 const c=getChoice(); if(c && c!=='live'){ alert('You already started Slot. Live is locked for this event.'); location.replace('index.html'); }
 
+/* Game data */
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], suits=['♠','♥','♦','♣'];
 function rnd(a){ return a[(Math.random()*a.length)|0]; }
 function val(r){ if(r==='A')return 1; if(['10','J','Q','K'].includes(r)) return 0; return Number(r); }
 
+/* State + DOM */
 let bet=null, dealt=false, player=[], banker=[];
 const betPlayer=document.getElementById('betPlayer'), betBanker=document.getElementById('betBanker'), dealBtn=document.getElementById('dealBtn');
 const pHand=document.getElementById('pHand'), bHand=document.getElementById('bHand'), pScore=document.getElementById('pScore'), bScore=document.getElementById('bScore');
 const result=document.getElementById('result'), codeBox=document.getElementById('codeBox'), copyBtn=document.getElementById('copyBtn');
 
+/* Functions */
+function dealCard(){ return { r: rnd(ranks), s: rnd(suits), shown:false, peel:0 }; }
+function score(hand){ return (hand.reduce((t,c)=>t+val(c.r),0))%10; }
+
+function renderHand(container, hand){
+  container.innerHTML='';
+  hand.forEach((c)=>{
+    const el=document.createElement('div'); el.className='playing-card'; if(c.shown) el.classList.add('show');
+    el.innerHTML=`<div class="face">${c.r}${c.s}</div>
+      <div class="cover"></div>
+      <div class="corners">
+        <button class="corner tl" aria-label="Peel top-left"></button>
+        <button class="corner tr" aria-label="Peel top-right"></button>
+        <button class="corner bl" aria-label="Peel bottom-left"></button>
+        <button class="corner br" aria-label="Peel bottom-right"></button>
+      </div>`;
+    el.querySelectorAll('.corner').forEach(btn=>btn.addEventListener('click',()=>{
+      if(c.shown) return;
+      if(!btn.classList.contains('off')){
+        btn.classList.add('off'); c.peel++;
+        if(c.peel>=3){ c.shown=true; el.classList.add('show'); updateScores(); maybeFinish(); }
+      }
+    }));
+    container.appendChild(el);
+  });
+}
+
+function updateScores(){
+  const ps = player.some(c=>c.shown) ? score(player) : '??';
+  const bs = banker.some(c=>c.shown) ? score(banker) : '??';
+  pScore.textContent = ps; bScore.textContent = bs;
+}
+
+function bothHandsShown(){ return player.every(c=>c.shown) && banker.every(c=>c.shown); }
+
+function maybeFinish(){
+  if(!bothHandsShown()) return;
+  const ps=score(player), bs=score(banker);
+  const winner = ps>bs ? 'player' : bs>ps ? 'banker' : 'tie';
+  if(winner==='tie'){
+    result.textContent='Tie — no voucher';
+    codeBox.style.display='block'; codeBox.textContent='TRY-AGAIN-NEXT-TIME';
+    return;
+  }
+  const win = (bet===winner);
+  result.textContent = win ? 'You win!' : (winner==='player'?'Player wins':'Banker wins');
+  if(win){
+    finalize(CODE_WIN);
+    try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE_WIN, ts:Date.now()})); }catch(e){}
+  }else{
+    codeBox.style.display='block'; codeBox.textContent=CODE_LOSE;
+  }
+}
+
+function finalize(code){
+  codeBox.style.display='block'; codeBox.textContent=code; copyBtn.style.display='inline-block';
+}
+
+/* Events */
 betPlayer.addEventListener('click', ()=> choose('player'));
 betBanker.addEventListener('click', ()=> choose('banker'));
 
 function choose(side){
   if(bet) return;
   setChoice('live');
-  bet=side; dealBtn.disabled=false; result.textContent='Bet on ' + (side==='player'?'Player':'Banker') + ' — tap Deal';
+  bet=side; dealBtn.disabled=false;
+  result.textContent='Bet on ' + (side==='player'?'Player':'Banker') + ' — tap Deal';
   betPlayer.disabled=true; betBanker.disabled=true;
 }
 
@@ -109,60 +170,24 @@ dealBtn.addEventListener('click', ()=>{
   if(dealt) return; dealt=true;
   player = [dealCard(), dealCard()];
   banker = [dealCard(), dealCard()];
-  renderHand(pHand, player, 'p');
-  renderHand(bHand, banker, 'b');
+  renderHand(pHand, player);
+  renderHand(bHand, banker);
   result.textContent='Squeeze to reveal';
 });
 
-function dealCard(){ return { r: rnd(ranks), s: rnd(suits), shown:false, peel:0 }; }
-function score(hand){ return (hand.reduce((t,c)=>t+val(c.r),0))%10; }
+/* PRIOR CLAIM CHECK — run after DOM refs + finalize exist */
+try{
+  const prior=localStorage.getItem(CLAIM_KEY);
+  if(prior){ finalize(JSON.parse(prior).code||CODE_WIN); }
+}catch(e){ /* ignore */ }
 
-function renderHand(container, hand, prefix){
-  container.innerHTML='';
-  hand.forEach((c,idx)=>{
-    const el=document.createElement('div'); el.className='playing-card'; if(c.shown) el.classList.add('show');
-    el.innerHTML=`<div class="face">${c.r}${c.s}</div>
-      <div class="cover"></div>
-      <div class="corners">
-        <button class="corner tl"></button>
-        <button class="corner tr"></button>
-        <button class="corner bl"></button>
-        <button class="corner br"></button>
-      </div>`;
-    const corners=[...el.querySelectorAll('.corner')];
-    corners.forEach(btn=>btn.addEventListener('click',()=>{
-      if(c.shown) return;
-      if(!btn.classList.contains('off')){ btn.classList.add('off'); c.peel++; if(c.peel>=3){ c.shown=true; el.classList.add('show'); updateScores(); maybeFinish(); } }
-    }));
-    container.appendChild(el);
+/* Copy code */
+copyBtn.addEventListener('click',()=>{
+  const t=codeBox.textContent.trim(); if(!t) return;
+  navigator.clipboard.writeText(t).then(()=>{
+    copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy Code',1200);
   });
-}
-
-function updateScores(){
-  const ps = player.filter(c=>c.shown).length ? score(player) : '??';
-  const bs = banker.filter(c=>c.shown).length ? score(banker) : '??';
-  pScore.textContent = ps; bScore.textContent = bs;
-}
-
-function bothHandsShown(){
-  return player.every(c=>c.shown) && banker.every(c=>c.shown);
-}
-
-function maybeFinish(){
-  if(!bothHandsShown()) return;
-  const ps=score(player), bs=score(banker);
-  let winner = ps>bs ? 'player' : bs>ps ? 'banker' : 'tie';
-  if(winner==='tie'){ result.textContent='Tie — no voucher'; codeBox.style.display='block'; codeBox.textContent='TRY-AGAIN-NEXT-TIME'; return; }
-  const win = (bet===winner);
-  result.textContent = win ? 'You win!' : (winner==='player'?'Player wins':'Banker wins');
-  if(win){ finalize(CODE_WIN); localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE_WIN, ts:Date.now()})); }
-  else { codeBox.style.display='block'; codeBox.textContent=CODE_LOSE; }
-}
-
-function finalize(code){
-  codeBox.style.display='block'; codeBox.textContent=code; copyBtn.style.display='inline-block';
-}
-copyBtn.addEventListener('click',()=>{ const t=codeBox.textContent.trim(); if(!t)return; navigator.clipboard.writeText(t).then(()=>{ copyBtn.textContent='Copied!'; setTimeout(()=>copyBtn.textContent='Copy Code',1200);});});
+});
 </script>
 </body>
 </html>
