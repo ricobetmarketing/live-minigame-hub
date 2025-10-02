@@ -3,37 +3,155 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>Live — Baccarat Squeeze (Lite)</title>
+<title>Live — Baccarat Squeeze (Lite, 6D)</title>
 <style>
-  :root{--ink:#eaf2ff;--mut:#9fb0d9;--g1:#71e1ff;--g2:#25c3ff}
+  :root{
+    --ink:#eaf2ff; --mut:#9fb0d9; --g1:#71e1ff; --g2:#25c3ff;
+    --haloA:#71e1ff66; --haloB:#c06bff55; --haloC:#ffd86a44;
+  }
   *{box-sizing:border-box} html,body{height:100%}
-  body{margin:0;color:var(--ink);background:radial-gradient(1200px 800px at 70% -10%,#18244d 0%,#0a0f1e 55%,#05070d 100%);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial;display:flex;align-items:center;justify-content:center;padding:18px}
-  a.back{position:fixed;left:12px;top:12px;z-index:10;text-decoration:none;background:rgba(0,0,0,.5);padding:8px 12px;border-radius:10px;color:#fff;font-weight:700}
-  .wrap{width:min(980px,96vw)}
-  .card{position:relative;border-radius:22px;padding:18px;background:linear-gradient(180deg,#1b2a56,#0f1832);outline:1px solid rgba(255,255,255,.08);box-shadow:0 16px 60px rgba(0,0,0,.55)}
-  h1{margin:0 0 8px;font-size:20px;font-weight:900;text-transform:uppercase}
-  p.sub{margin:0 6px 16px;color:var(--mut)}
-  .felt{border-radius:18px;background:radial-gradient(closest-side,#13325f,#0e1f43);outline:1px solid rgba(255,255,255,.08);box-shadow:inset 0 0 60px rgba(0,0,0,.6);padding:14px}
-  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center}
-  .btn{border:0;border-radius:12px;padding:10px 14px;font-weight:900;cursor:pointer;background:linear-gradient(to right,var(--g1),var(--g2));color:#061018;box-shadow:0 0 18px rgba(113,225,255,.5), inset 0 -3px 0 rgba(0,0,0,.35)}
-  .ghost{background:#2b2b2b;color:#fff}
-  .zone{display:grid;gap:8px;grid-template-columns:1fr 1fr;align-items:center}
-  .side{border-radius:16px;background:rgba(0,0,0,.25);padding:12px;outline:1px solid rgba(255,255,255,.08)}
-  .side h3{margin:0 0 6px;font-size:14px;display:flex;justify-content:space-between;align-items:center}
-  .hand{display:flex;gap:10px;justify-content:center;min-height:120px}
-  .playing-card{position:relative;width:86px;height:120px;border-radius:12px;background:radial-gradient(220px 140px at 50% -20%,#fff,#e9eefc 40%,#c8d4f3 100%);outline:2px solid #e5ecff;box-shadow:0 10px 24px rgba(0,0,0,.35);display:grid;place-items:center;font-weight:900;color:#1a2050;overflow:hidden}
-  .face{filter:blur(3px)} .playing-card.show .face{filter:none;transition:filter .2s}
-  .cover{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(10,16,30,.75),rgba(10,16,30,.55));}
-  .corners{position:absolute;inset:0}
-  .corner{position:absolute;width:40px;height:40px;background:rgba(10,16,30,.92);outline:1px solid rgba(255,255,255,.06);opacity:.95}
-  .corner.off{opacity:0;pointer-events:none;transition:opacity .15s}
-  .playing-card.show .corners{display:none} /* hide peel zones after reveal */
-  .tl{left:0;top:0;clip-path:polygon(0 0,100% 0,0 100%)} .tr{right:0;top:0;clip-path:polygon(0 0,100% 0,100% 100%)} 
-  .bl{left:0;bottom:0;clip-path:polygon(0 0,100% 100%,0 100%)} .br{right:0;bottom:0;clip-path:polygon(100% 0,100% 100%,0 100%)}
-  .score{text-align:center;color:#ffd86a;font-weight:900;text-shadow:0 0 10px rgba(255,216,106,.6);margin-top:6px}
-  .status{text-align:center;margin-top:10px;color:#9fb0d9}
-  .code{display:none;margin-top:10px;text-align:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.5px;padding:10px 12px;border-radius:12px;background:#0a0d1a;outline:1px dashed rgba(160,220,255,.35)}
-  .copy{display:none;margin-top:8px;border:0;border-radius:10px;padding:8px 10px;font-weight:900;background:#2b2b2b;color:#fff}
+  body{
+    margin:0; color:var(--ink);
+    background:
+      radial-gradient(1400px 900px at 70% -10%, #18244d 0%, #0a0f1e 55%, #05070d 100%);
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+    display:flex; align-items:center; justify-content:center; padding:18px;
+  }
+  a.back{
+    position:fixed; left:12px; top:12px; z-index:10; text-decoration:none;
+    background:rgba(0,0,0,.5); padding:8px 12px; border-radius:10px; color:#fff; font-weight:700
+  }
+  .wrap{ width:min(1000px,96vw) }
+  .card{
+    position:relative; border-radius:22px; padding:18px;
+    background:linear-gradient(180deg,#1b2a56,#0f1832);
+    outline:1px solid rgba(255,255,255,.08);
+    box-shadow:0 16px 60px rgba(0,0,0,.55);
+    overflow:visible;
+  }
+  .card::before{
+    /* Big neon halo behind the table for 6D depth */
+    content:""; position:absolute; inset:-10% -8% -16% -8%; z-index:-1;
+    background:
+      radial-gradient(closest-side at 50% 10%, var(--haloA), transparent 70%),
+      radial-gradient(closest-side at 65% 60%, var(--haloB), transparent 72%),
+      radial-gradient(closest-side at 35% 90%, var(--haloC), transparent 70%);
+    filter: blur(24px);
+  }
+  .card::after{
+    /* Moving spotlight sweep */
+    content:""; position:absolute; inset:-8% -6% -14% -6%; z-index:-1;
+    background: radial-gradient(120% 100% at var(--sx,40%) var(--sy,10%),
+                rgba(255,255,255,.12), rgba(255,255,255,0) 60%);
+    filter: blur(10px); mix-blend-mode:screen; animation: sweep 8s ease-in-out infinite;
+  }
+  @keyframes sweep{
+    0% { --sx:35%; --sy:12%; opacity:.45 }
+    50%{ --sx:65%; --sy:18%; opacity:.9 }
+    100%{ --sx:35%; --sy:12%; opacity:.45 }
+  }
+
+  h1{margin:0 0 8px; font-size:22px; font-weight:900; text-transform:uppercase}
+  p.sub{margin:0 6px 16px; color:var(--mut)}
+
+  .felt{
+    position:relative; border-radius:18px;
+    background:radial-gradient(closest-side,#13325f,#0e1f43);
+    outline:1px solid rgba(255,255,255,.08);
+    box-shadow:
+      inset 0 0 60px rgba(0,0,0,.6),
+      0 0 60px rgba(113,225,255,.18),
+      0 0 80px rgba(192,107,255,.16);
+    padding:14px;
+    perspective:1400px;
+  }
+  #fx{ position:absolute; inset:0; pointer-events:none; }
+
+  .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:center}
+  .btn{
+    border:0; border-radius:12px; padding:10px 14px; font-weight:900; cursor:pointer;
+    background:linear-gradient(to right,var(--g1),var(--g2)); color:#061018;
+    box-shadow:0 0 18px rgba(113,225,255,.5), inset 0 -3px 0 rgba(0,0,0,.35)
+  }
+  .ghost{ background:#2b2b2b; color:#fff }
+  .btn:disabled{ opacity:.6; pointer-events:none }
+
+  .zone{display:grid; gap:10px; grid-template-columns:1fr 1fr; align-items:center}
+  .side{
+    border-radius:16px; background:rgba(0,0,0,.25); padding:12px;
+    outline:1px solid rgba(255,255,255,.08);
+    transform-style:preserve-3d;
+  }
+  .side h3{margin:0 0 6px; font-size:14px; display:flex; justify-content:space-between; align-items:center}
+  .hand{display:flex; gap:12px; justify-content:center; min-height:126px}
+
+  .playing-card{
+    position:relative; width:90px; height:126px; border-radius:14px;
+    background:radial-gradient(240px 160px at 50% -20%,#fff,#e9eefc 40%,#c8d4f3 100%);
+    outline:2px solid #e5ecff; box-shadow:0 16px 28px rgba(0,0,0,.4);
+    display:grid; place-items:center; font-weight:900; color:#1a2050; overflow:hidden;
+    transform: translateZ(0) rotateX(6deg); transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .playing-card:hover{ transform:translateZ(18px) rotateX(6deg); box-shadow:0 24px 46px rgba(0,0,0,.55) }
+  .playing-card.active{
+    box-shadow:0 0 0 3px rgba(113,225,255,.6), 0 18px 42px rgba(0,0,0,.55);
+    transform:translateZ(22px) rotateX(6deg) scale(1.02);
+  }
+  .playing-card.active::after{
+    content:""; position:absolute; inset:-8px; border-radius:16px; pointer-events:none;
+    background:radial-gradient(140px 80px at 50% -20%, rgba(255,255,255,.2), transparent 70%);
+    mix-blend-mode:screen;
+  }
+
+  .deal-in{
+    opacity:0; transform:translateY(-30px) rotateX(12deg) scale(.96);
+    animation: deal .42s cubic-bezier(.2,.8,.2,1) forwards;
+  }
+  @keyframes deal{
+    to{ opacity:1; transform:translateY(0) rotateX(6deg) scale(1) }
+  }
+
+  .face{ filter:blur(3px); transform:translateZ(2px) }
+  .playing-card.show .face{ filter:none; transition:filter .18s ease }
+  .cover{ position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(180deg,rgba(10,16,30,.75),rgba(10,16,30,.55));
+  }
+
+  .corners{ position:absolute; inset:0 }
+  .corner{
+    position:absolute; width:44px; height:44px; background:rgba(10,16,30,.92);
+    outline:1px solid rgba(255,255,255,.06); opacity:.95; transition:opacity .15s ease;
+  }
+  .corner.off{ opacity:0; pointer-events:none }
+  .playing-card.show .corners{ display:none }
+
+  .tl{left:0;top:0;clip-path:polygon(0 0,100% 0,0 100%)}
+  .tr{right:0;top:0;clip-path:polygon(0 0,100% 0,100% 100%)}
+  .bl{left:0;bottom:0;clip-path:polygon(0 0,100% 100%,0 100%)}
+  .br{right:0;bottom:0;clip-path:polygon(100% 0,100% 100%,0 100%)}
+
+  .score{text-align:center; color:#ffd86a; font-weight:900; text-shadow:0 0 10px rgba(255,216,106,.6); margin-top:6px}
+  .status{text-align:center; margin-top:10px; color:#9fb0d9}
+
+  .guide{
+    position:absolute; inset:-8px; border-radius:16px; pointer-events:none; display:none;
+    border:2px dashed rgba(113,225,255,.8); box-shadow:0 0 22px rgba(113,225,255,.45) inset;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  .playing-card.active .guide{ display:block }
+  @keyframes pulse{
+    0%{ opacity:.6 } 50%{ opacity:1 } 100%{ opacity:.6 }
+  }
+
+  .code{
+    display:none; margin-top:10px; text-align:center;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.5px;
+    padding:10px 12px; border-radius:12px; background:#0a0d1a; outline:1px dashed rgba(160,220,255,.35)
+  }
+  .copy{
+    display:none; margin-top:8px; border:0; border-radius:10px; padding:8px 10px; font-weight:900;
+    background:#2b2b2b; color:#fff
+  }
 </style>
 </head>
 <body>
@@ -41,10 +159,12 @@
   <div class="wrap">
     <div class="card">
       <h1>Baccarat Squeeze (Lite)</h1>
-      <p class="sub">Pick a side, then “squeeze” the corners to reveal. Highest total (mod 10) wins. Your first bet locks you to <b>Live</b>.</p>
+      <p class="sub">Bet first, then Deal. Squeeze cards in order (P1 → B1 → P2 → B2). Highest total (mod 10) wins. Your first bet locks you to <b>Live</b>.</p>
 
       <div class="felt">
-        <div class="row" style="margin-bottom:8px">
+        <canvas id="fx"></canvas>
+
+        <div class="row" style="margin-bottom:10px">
           <button class="btn" id="betPlayer">Bet Player</button>
           <button class="btn ghost" id="betBanker">Bet Banker</button>
           <button class="btn" id="dealBtn" disabled>Deal</button>
@@ -62,7 +182,7 @@
         </div>
 
         <div class="score" id="result">Place your bet</div>
-        <div class="status" id="hint">Tap each card’s corners to peel. Reveal at least 3 corners to flip.</div>
+        <div class="status" id="hint">Squeeze: tap 3 corners on the highlighted card to flip.</div>
 
         <div class="code" id="codeBox">LIVE-BAC-XXXX</div>
         <button class="copy" id="copyBtn">Copy Code</button>
@@ -70,9 +190,13 @@
     </div>
   </div>
 
-<script src="assets/common.js"></script>
+<!-- SFX -->
+<audio id="sDeal"  src="https://cdn.jsdelivr.net/gh/naptha/tinyfiles@main/slot/lever.mp3" preload="auto"></audio>
+<audio id="sFlip"  src="https://cdn.jsdelivr.net/gh/naptha/tinyfiles@main/slot/stop.mp3"  preload="auto"></audio>
+<audio id="sWin"   src="https://cdn.jsdelivr.net/gh/naptha/tinyfiles@main/slot/win.mp3"   preload="auto"></audio>
+
 <script>
-/* Fallback if assets/common.js is missing */
+/* ===== Fallback if assets/common.js is missing ===== */
 if (typeof window.getChoice !== 'function') {
   window.getChoice = function(){ try { return localStorage.getItem('realm_choice'); } catch(e){ return null; } };
 }
@@ -80,108 +204,188 @@ if (typeof window.setChoice !== 'function') {
   window.setChoice = function(v){ try { localStorage.setItem('realm_choice', v); } catch(e){} };
 }
 
+/* ===== Config ===== */
 const CLAIM_KEY='live_bac_squeeze_claimed_v1';
 const CODE_WIN='LIVE-BAC-WIN', CODE_LOSE='TRY-AGAIN-NEXT-TIME';
 
+/* ===== Realm lock gate ===== */
 const c=getChoice(); if(c && c!=='live'){ alert('You already started Slot. Live is locked for this event.'); location.replace('index.html'); }
 
-/* Game data */
+/* ===== Data helpers ===== */
 const ranks=['A','2','3','4','5','6','7','8','9','10','J','Q','K'], suits=['♠','♥','♦','♣'];
-function rnd(a){ return a[(Math.random()*a.length)|0]; }
-function val(r){ if(r==='A')return 1; if(['10','J','Q','K'].includes(r)) return 0; return Number(r); }
+const rnd = a => a[(Math.random()*a.length)|0];
+const val = r => (r==='A'?1: (['10','J','Q','K'].includes(r)?0:Number(r)));
 
-/* State + DOM */
-let bet=null, dealt=false, player=[], banker=[];
-const betPlayer=document.getElementById('betPlayer'), betBanker=document.getElementById('betBanker'), dealBtn=document.getElementById('dealBtn');
-const pHand=document.getElementById('pHand'), bHand=document.getElementById('bHand'), pScore=document.getElementById('pScore'), bScore=document.getElementById('bScore');
-const result=document.getElementById('result'), codeBox=document.getElementById('codeBox'), copyBtn=document.getElementById('copyBtn');
+/* ===== State + DOM ===== */
+let bet=null, dealt=false;  // chosen side + has been dealt
+let player=[], banker=[];   // arrays of cards {r,s,shown:false,peel:0, el:HTMLElement}
+let order=[], step=0;       // order of reveals and current step index
 
-/* Functions */
-function dealCard(){ return { r: rnd(ranks), s: rnd(suits), shown:false, peel:0 }; }
-function score(hand){ return (hand.reduce((t,c)=>t+val(c.r),0))%10; }
+const betPlayer = document.getElementById('betPlayer');
+const betBanker = document.getElementById('betBanker');
+const dealBtn   = document.getElementById('dealBtn');
+const pHand     = document.getElementById('pHand');
+const bHand     = document.getElementById('bHand');
+const pScoreEl  = document.getElementById('pScore');
+const bScoreEl  = document.getElementById('bScore');
+const resultEl  = document.getElementById('result');
+const hintEl    = document.getElementById('hint');
+const codeBox   = document.getElementById('codeBox');
+const copyBtn   = document.getElementById('copyBtn');
 
-function renderHand(container, hand){
-  container.innerHTML='';
-  hand.forEach((c)=>{
-    const el=document.createElement('div'); el.className='playing-card'; if(c.shown) el.classList.add('show');
-    el.innerHTML=`<div class="face">${c.r}${c.s}</div>
-      <div class="cover"></div>
-      <div class="corners">
-        <button class="corner tl" aria-label="Peel top-left"></button>
-        <button class="corner tr" aria-label="Peel top-right"></button>
-        <button class="corner bl" aria-label="Peel bottom-left"></button>
-        <button class="corner br" aria-label="Peel bottom-right"></button>
-      </div>`;
-    el.querySelectorAll('.corner').forEach(btn=>btn.addEventListener('click',()=>{
-      if(c.shown) return;
-      if(!btn.classList.contains('off')){
-        btn.classList.add('off'); c.peel++;
-        if(c.peel>=3){ c.shown=true; el.classList.add('show'); updateScores(); maybeFinish(); }
-      }
-    }));
-    container.appendChild(el);
-  });
+/* SFX */
+const sDeal = document.getElementById('sDeal');
+const sFlip = document.getElementById('sFlip');
+const sWin  = document.getElementById('sWin');
+
+/* Confetti FX canvas */
+const fx = document.getElementById('fx'); const ctx = fx.getContext('2d');
+function resizeFX(){ fx.width = fx.parentElement.clientWidth; fx.height = fx.parentElement.clientHeight; }
+addEventListener('resize', resizeFX); addEventListener('orientationchange', ()=>setTimeout(resizeFX,200)); resizeFX();
+function confetti(){
+  const p=[]; for(let i=0;i<220;i++) p.push({x:fx.width/2,y:60+Math.random()*40,vx:(Math.random()-0.5)*6,vy:(Math.random()-0.5)*5,life:160+Math.random()*60,r:2+Math.random()*3,h:Math.random()*360});
+  (function loop(){
+    ctx.clearRect(0,0,fx.width,fx.height);
+    p.forEach(o=>{ o.x+=o.vx; o.y+=o.vy; o.vy+=0.06; o.life--; ctx.globalAlpha=Math.max(0,o.life/220); ctx.fillStyle=`hsl(${o.h},100%,60%)`; ctx.fillRect(o.x,o.y,o.r,o.r);});
+    ctx.globalAlpha=1;
+    if(p.some(o=>o.life>0)) requestAnimationFrame(loop);
+  })();
 }
 
+/* ===== Utility ===== */
+function score(hand){ return hand.reduce((t,c)=>t+val(c.r),0)%10; }
 function updateScores(){
   const ps = player.some(c=>c.shown) ? score(player) : '??';
   const bs = banker.some(c=>c.shown) ? score(banker) : '??';
-  pScore.textContent = ps; bScore.textContent = bs;
+  pScoreEl.textContent = ps; bScoreEl.textContent = bs;
+}
+function setActiveCard(cardObj){
+  // Disable all corners except this card's
+  [...document.querySelectorAll('.playing-card')].forEach(el=>el.classList.remove('active'));
+  if (!cardObj) return;
+  const el = cardObj.el;
+  el.classList.add('active');
+  hintEl.textContent = `Squeeze ${cardObj.side==='p'?'Player':'Banker'} card ${cardObj.idx+1}: tap any 3 corners`;
 }
 
-function bothHandsShown(){ return player.every(c=>c.shown) && banker.every(c=>c.shown); }
+/* ===== Build a card element with peel logic ===== */
+function makeCardEl(cardObj){
+  const el=document.createElement('div');
+  el.className='playing-card deal-in';
+  el.innerHTML=`
+    <div class="face">${cardObj.r}${cardObj.s}</div>
+    <div class="cover"></div>
+    <div class="corners">
+      <button class="corner tl" aria-label="Peel top-left"></button>
+      <button class="corner tr" aria-label="Peel top-right"></button>
+      <button class="corner bl" aria-label="Peel bottom-left"></button>
+      <button class="corner br" aria-label="Peel bottom-right"></button>
+    </div>
+    <div class="guide"></div>
+  `;
+  // corner clickers
+  el.querySelectorAll('.corner').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      // only allow peeling if this is the currently active card
+      if (order[step] !== cardObj) return;
+      if(cardObj.shown) return;
+      if(!btn.classList.contains('off')){
+        btn.classList.add('off'); cardObj.peel++;
+        if(cardObj.peel>=3){
+          // flip!
+          cardObj.shown=true; el.classList.add('show');
+          try{ sFlip.currentTime=0; sFlip.play().catch(()=>{}); }catch(e){}
+          updateScores();
+          // move to next after a tiny beat
+          setTimeout(nextStep, 220);
+        }
+      }
+    });
+  });
+  // slight per-card deal delay
+  el.style.animationDelay = (cardObj.delay || 0)+'ms';
+  return el;
+}
 
-function maybeFinish(){
-  if(!bothHandsShown()) return;
+/* ===== Round flow ===== */
+function choose(side){
+  if(bet) return;
+  setChoice('live');
+  bet=side; dealBtn.disabled=false;
+  resultEl.textContent='Bet on ' + (side==='player'?'Player':'Banker') + ' — tap Deal';
+  betPlayer.disabled=true; betBanker.disabled=true;
+}
+betPlayer.addEventListener('click', ()=>choose('player'));
+betBanker.addEventListener('click', ()=>choose('banker'));
+
+function deal(){
+  if(dealt) return; dealt=true;
+  try{ sDeal.currentTime=0; sDeal.play().catch(()=>{}); }catch(e){}
+  // generate cards
+  player = [ {r:rnd(ranks),s:rnd(suits),shown:false,peel:0,side:'p',idx:0,delay:80},
+             {r:rnd(ranks),s:rnd(suits),shown:false,peel:0,side:'p',idx:1,delay:360} ];
+  banker = [ {r:rnd(ranks),s:rnd(suits),shown:false,peel:0,side:'b',idx:0,delay:220},
+             {r:rnd(ranks),s:rnd(suits),shown:false,peel:0,side:'b',idx:1,delay:500} ];
+
+  // Clear and render with animated deal-in
+  pHand.innerHTML=''; bHand.innerHTML='';
+  player.forEach(c=>{ c.el = makeCardEl(c); pHand.appendChild(c.el); });
+  banker.forEach(c=>{ c.el = makeCardEl(c); bHand.appendChild(c.el); });
+
+  // guided reveal order (like classic squeeze pacing)
+  order = [ player[0], banker[0], player[1], banker[1] ];
+  step = 0;
+  updateScores();
+  resultEl.textContent='Squeeze to reveal';
+  setTimeout(()=> setActiveCard(order[0]), 540); // let last card finish deal-in
+}
+dealBtn.addEventListener('click', deal);
+
+function nextStep(){
+  step++;
+  if(step < order.length){
+    setActiveCard(order[step]);
+  }else{
+    // all revealed
+    setActiveCard(null);
+    finishRound();
+  }
+}
+
+function finishRound(){
   const ps=score(player), bs=score(banker);
-  const winner = ps>bs ? 'player' : bs>ps ? 'banker' : 'tie';
+  let winner = ps>bs ? 'player' : bs>ps ? 'banker' : 'tie';
   if(winner==='tie'){
-    result.textContent='Tie — no voucher';
+    resultEl.textContent='Tie — no voucher';
     codeBox.style.display='block'; codeBox.textContent='TRY-AGAIN-NEXT-TIME';
     return;
   }
-  const win = (bet===winner);
-  result.textContent = win ? 'You win!' : (winner==='player'?'Player wins':'Banker wins');
-  if(win){
-    finalize(CODE_WIN);
+  const youWin = (bet===winner);
+  resultEl.textContent = youWin ? 'You win!' : (winner==='player'?'Player wins':'Banker wins');
+
+  if(youWin){
+    codeBox.style.display='block'; codeBox.textContent=CODE_WIN; copyBtn.style.display='inline-block';
     try{ localStorage.setItem(CLAIM_KEY, JSON.stringify({code:CODE_WIN, ts:Date.now()})); }catch(e){}
+    try{ sWin.currentTime=0; sWin.play().catch(()=>{}); }catch(e){}
+    confetti();
   }else{
     codeBox.style.display='block'; codeBox.textContent=CODE_LOSE;
   }
 }
 
-function finalize(code){
-  codeBox.style.display='block'; codeBox.textContent=code; copyBtn.style.display='inline-block';
-}
-
-/* Events */
-betPlayer.addEventListener('click', ()=> choose('player'));
-betBanker.addEventListener('click', ()=> choose('banker'));
-
-function choose(side){
-  if(bet) return;
-  setChoice('live');
-  bet=side; dealBtn.disabled=false;
-  result.textContent='Bet on ' + (side==='player'?'Player':'Banker') + ' — tap Deal';
-  betPlayer.disabled=true; betBanker.disabled=true;
-}
-
-dealBtn.addEventListener('click', ()=>{
-  if(dealt) return; dealt=true;
-  player = [dealCard(), dealCard()];
-  banker = [dealCard(), dealCard()];
-  renderHand(pHand, player);
-  renderHand(bHand, banker);
-  result.textContent='Squeeze to reveal';
-});
-
-/* PRIOR CLAIM CHECK — run after DOM refs + finalize exist */
+/* ===== Prior claim check (auto-finalize) ===== */
 try{
   const prior=localStorage.getItem(CLAIM_KEY);
-  if(prior){ finalize(JSON.parse(prior).code||CODE_WIN); }
-}catch(e){ /* ignore */ }
+  if(prior){
+    codeBox.style.display='block';
+    codeBox.textContent = JSON.parse(prior).code || CODE_WIN;
+    copyBtn.style.display='inline-block';
+    betPlayer.disabled=true; betBanker.disabled=true; dealBtn.disabled=true;
+    resultEl.textContent='Voucher already claimed';
+  }
+}catch(e){}
 
-/* Copy code */
+/* ===== Copy code ===== */
 copyBtn.addEventListener('click',()=>{
   const t=codeBox.textContent.trim(); if(!t) return;
   navigator.clipboard.writeText(t).then(()=>{
