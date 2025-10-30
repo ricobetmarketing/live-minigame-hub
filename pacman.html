@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <meta name="color-scheme" content="dark"/>
-<title>Neon Pac Maze — Start & Randomized</title>
+<title>Neon Pac Maze — Start & Randomized (Fixed Spawn)</title>
 <style>
   :root{
     --bg:#070711;
@@ -103,7 +103,7 @@
 <div class="overlay" id="gate">
   <div class="panel">
     <h1>Neon Pac Maze</h1>
-    <div class="mini">Collect dots • Avoid ghosts • Eat power pellets to scare them<br/>Random bonuses appear: 🍒 +Points • ⚡ Speed • ❄ Freeze</div>
+    <div class="mini">Collect dots • Avoid ghosts • Eat power pellets to scare them<br/>Random bonuses: 🍒 +Points • ⚡ Speed • ❄ Freeze</div>
     <button class="btn" id="bigStart">START</button>
   </div>
 </div>
@@ -113,7 +113,7 @@
    Tiny Pac-style Engine
    ========================= */
 
-// ----- Audio (no files; oscillator beeps)
+// ----- Audio (oscillator beeps)
 const Audio = (() => {
   const Ctx = window.AudioContext || window.webkitAudioContext;
   let ctx = null;
@@ -131,8 +131,7 @@ const Audio = (() => {
     eatGhost(){beep(880, .12, 'square', .045)},
     death(){beep(110, .6, 'triangle', .06)},
     bonus(){beep(1040,.08,'square',.05)},
-    tick(){beep(520, .03, 'square', .02)},
-    unlock(){ensure()} // start on first user gesture
+    unlock(){ensure()}
   };
 })();
 
@@ -140,7 +139,7 @@ const Audio = (() => {
 const cvs = document.getElementById('game');
 const ctx = cvs.getContext('2d');
 
-const TILE = 16;                 // 28x36 -> 448x576
+const TILE = 16;                 // 28x36 grid -> 448x576
 const W = 28, H = 36;
 
 // ----- Maze walls (0=path, 1=wall, 9=ghost door)
@@ -194,7 +193,7 @@ function placePelletsRandom(){
   pellets=0;
   for(let y=0;y<H;y++)for(let x=0;x<W;x++){
     if(MAZE[y][x]===T_EMPTY){
-      // 75% chance a dot, 3% chance power pellet, rest empty space
+      // 75% chance a dot, 3% chance power pellet, rest empty
       const r = Math.random();
       if(r<0.03){ MAZE[y][x]=T_PWR; pellets++; }
       else if(r<0.78){ MAZE[y][x]=T_DOT; pellets++; }
@@ -208,7 +207,23 @@ function placePelletsRandom(){
     if(MAZE[ry]?.[rx]===T_DOT){ MAZE[ry][rx]=T_PWR; pwrCount++; }
   }
 }
+
+// carve a 3x3 open area around the spawn + short corridors so Pac can leave
+function ensureSpawnClear(){
+  const rx = Math.round(startPac.x), ry = Math.round(startPac.y);
+  for (let dy = -1; dy <= 1; dy++){
+    for (let dx = -1; dx <= 1; dx++){
+      if (MAZE[ry+dy]?.[rx+dx] !== undefined) MAZE[ry+dy][rx+dx] = T_EMPTY;
+    }
+  }
+  if (MAZE[ry]?.[rx-2] !== undefined) MAZE[ry][rx-2] = T_EMPTY;
+  if (MAZE[ry]?.[rx+2] !== undefined) MAZE[ry][rx+2] = T_EMPTY;
+  if (MAZE[ry-2]?.[rx] !== undefined) MAZE[ry-2][rx] = T_EMPTY;
+  if (MAZE[ry+2]?.[rx] !== undefined) MAZE[ry+2][rx] = T_EMPTY;
+}
+
 placePelletsRandom();
+ensureSpawnClear();
 
 // Random tool spawner (bonus items on empty tiles)
 const TOOL_TYPES = [
@@ -241,14 +256,8 @@ let freezeTimer=0;
 // ----- Helpers
 function getCSS(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
 function tileAt(x,y){ return MAZE[Math.floor(y)]?.[Math.floor(x)] ?? 1; }
-function canWalk(nx,ny){
-  const t = tileAt(nx,ny);
-  return t!==T_WALL && t!==T_DOOR; // door blocks Pac
-}
-function canGhost(nx,ny){
-  const t = tileAt(nx,ny);
-  return t!==T_WALL; // ghosts can pass door
-}
+function canWalk(nx,ny){ const t = tileAt(nx,ny); return t!==T_WALL && t!==T_DOOR; }
+function canGhost(nx,ny){ const t = tileAt(nx,ny); return t!==T_WALL; }
 function wrapX(x){ if (x<-1) return W+1; if (x>W+1) return -1; return x; }
 function opposite(a,b){ return (a==='left'&&b==='right')||(a==='right'&&b==='left')||(a==='up'&&b==='down')||(a==='down'&&b==='up'); }
 function nextPos(ent,dir){ const d=DIRS[dir]; return {x:ent.x+d.x, y:ent.y+d.y}; }
@@ -257,10 +266,8 @@ function dist2(a,b){ const dx=a.x-b.x, dy=a.y-b.y; return dx*dx+dy*dy; }
 function reset(allRandom=true){
   score=0; frightened=0; combo=0; gameOver=false; running=false;
   pacSpeed=pacSpeedBase; freezeTimer=0;
-  if(allRandom) placePelletsRandom();
-  // Pac
+  if(allRandom){ placePelletsRandom(); ensureSpawnClear(); }
   pac = {...startPac, mouth:0, next:'left', speed:pacSpeed};
-  // Ghosts randomized colors & slight speed variance
   ghosts = Array.from({length:4}, (_,i)=>({
     name:'g'+i, color:getCSS(ghostColors[i]),
     x:ghostHomes[i].x, y:ghostHomes[i].y, dir:'left',
@@ -271,18 +278,13 @@ function reset(allRandom=true){
 }
 reset();
 
-// ----- Input (keyboard + D-pad + swipe)
+// ----- Input
 window.addEventListener('keydown', e => {
   const map = { ArrowLeft:'left', ArrowRight:'right', ArrowUp:'up', ArrowDown:'down',
                 a:'left', d:'right', w:'up', s:'down', A:'left', D:'right', W:'up', S:'down' };
   const dir = map[e.key];
-  if (dir) {
-    pac.next = dir;
-    e.preventDefault();
-    Audio.unlock();
-  }
+  if (dir) { pac.next = dir; e.preventDefault(); Audio.unlock(); }
 });
-
 document.getElementById('restart').onclick=()=>{ Audio.unlock(); reset(true); showGate(true); };
 document.getElementById('start').onclick=()=>{ startGame(); };
 document.getElementById('bigStart').onclick=()=>{ startGame(); };
@@ -333,9 +335,10 @@ function update(step){
     if(canWalk(nx,ny)) pac.dir=pac.next;
   }
 
-  // Move with look-ahead
+  // Move with more-forgiving look-ahead
   const d = DIRS[pac.dir];
-  const aheadX = pac.x + d.x * 0.55, aheadY = pac.y + d.y * 0.55;
+  const aheadX = pac.x + d.x * 0.40;   // <= was 0.55
+  const aheadY = pac.y + d.y * 0.40;
   const spd = pacSpeed;
   if(canWalk(aheadX, aheadY)){
     pac.x = wrapX(pac.x + d.x * spd);
@@ -343,7 +346,7 @@ function update(step){
     pac.mouth = (pac.mouth + step * 0.4) % 1;
   }
 
-  // Eat dots / power
+  // Eat dots / power pellets
   const tx = Math.round(pac.x), ty = Math.round(pac.y);
   const t = MAZE[ty]?.[tx];
   if(t===T_DOT){ MAZE[ty][tx]=T_EMPTY; score+=10; document.getElementById('score').textContent=score; Audio.chomp(); }
@@ -396,7 +399,8 @@ function update(step){
     if(g.eaten) return;
     if(Math.hypot(g.x-pac.x,g.y-pac.y)<.6){
       if(frightened>0){
-        g.eaten=true; combo++; score+=200*Math.pow(2,Math.min(combo-1,3)); document.getElementById('score').textContent=score; Audio.eatGhost();
+        g.eaten=true; combo++; score+=200*Math.pow(2,Math.min(combo-1,3));
+        document.getElementById('score').textContent=score; Audio.eatGhost();
       } else {
         Audio.death(); gameOver=true; running=false;
         setTimeout(()=>alert('Game Over! Score: '+score), 50);
@@ -404,7 +408,7 @@ function update(step){
     }
   });
 
-  // Win
+  // Win check
   let left=0; for(let y=0;y<H;y++)for(let x=0;x<W;x++) if(MAZE[y][x]==T_DOT||MAZE[y][x]==T_PWR) left++;
   if(left===0){ running=false; setTimeout(()=>alert('You cleared the board! Score: '+score), 50); }
 }
@@ -414,7 +418,7 @@ function draw(){
   // bg
   ctx.fillStyle=getCSS('--bg'); ctx.fillRect(0,0,cvs.width,cvs.height);
 
-  // maze neon walls + pellets + tools
+  // maze + pellets + tools
   drawMaze();
   drawTools();
 
@@ -466,7 +470,6 @@ function drawTools(){
     const x=it.x*TILE, y=it.y*TILE;
     ctx.fillStyle=it.type.color;
     ctx.beginPath(); ctx.arc(x, y, 4.5, 0, Math.PI*2); ctx.fill();
-    // tiny icon hint
     ctx.fillStyle='#0b0c1a';
     ctx.font='8px monospace'; ctx.textAlign='center'; ctx.textBaseline='middle';
     const icon = it.type.id==='cherry'?'★':it.type.id==='speed'?'⚡':'❄';
