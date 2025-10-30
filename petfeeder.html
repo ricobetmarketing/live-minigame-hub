@@ -74,6 +74,20 @@
   .pet{animation:floaty 1.2s ease-in-out infinite}
   .eyes{transform-origin:center; animation:blink 2.4s ease-in-out infinite}
   .pet.pop{animation:pop .18s ease-out 1}
+/* add these or merge with existing rules */
+.pet, .eyes{
+  transform-box: fill-box;      /* <-- anchor transform to this group's bounds */
+  transform-origin: 50% 50%;    /* center so scaleY won't shift position */
+}
+
+/* replace your blink keyframes with this version */
+@keyframes blink{
+  0%,92%,100%{ transform: translateY(0) scaleY(1); }
+  96%{        transform: translateY(0) scaleY(.15); } /* no vertical drift */
+}
+
+/* optional: help some GPUs keep it crisp */
+.eyes{ will-change: transform; }
 
   /* Heart particles */
   .heart{transform-origin:center; opacity:.9; }
