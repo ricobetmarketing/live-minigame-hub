@@ -161,7 +161,7 @@ for (let y=1; y<yOffset-1; y++) for (let x=1; x<W-1; x++) MAZE[y][x]= (x%2&&y%2)
 
 // ----- Entities
 const DIRS = {left:{x:-1,y:0}, right:{x:1,y:0}, up:{x:0,y:-1}, down:{x:0,y:1}};
-const startPac = {x:13.5, y:26, dir:'left'};
+const startPac = { x: 12.5, y: 26, dir: 'left' };
 const startGhosts = [
   {name:'blinky', color:getCSS('--ghost-red'), x:13.5, y:17,  home:{x:26,y:1}},
   {name:'pinky',  color:getCSS('--ghost-pink'), x:12.5, y:19, home:{x:1,y:1}},
@@ -238,8 +238,14 @@ function update(step){
     if(canWalk(nx,ny)) pac.dir=pac.next;
   }
   // Move
-  const d = DIRS[pac.dir]; let nx = pac.x + d.x*pac.speed, ny = pac.y + d.y*pac.speed;
-  if(canWalk(nx,ny)){ pac.x=wrapX(nx); pac.y=ny; pac.mouth=(pac.mouth+step*.4)%1; }
+  const d = DIRS[pac.dir];
+  const aheadX = pac.x + d.x * 0.55;   // small look-ahead
+  const aheadY = pac.y + d.y * 0.55;
+  if (canWalk(aheadX, aheadY)) {
+    pac.x = wrapX(pac.x + d.x * pac.speed);
+    pac.y =            pac.y + d.y * pac.speed;
+    pac.mouth = (pac.mouth + step * 0.4) % 1;
+  }
   // Eat dots
   const tx = Math.round(pac.x), ty = Math.round(pac.y);
   const t = MAZE[ty]?.[tx];
