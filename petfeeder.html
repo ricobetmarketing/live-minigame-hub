@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="color-scheme" content="dark"/>
+<title>Pet Feeder — HTML5</title>
+
+<!-- Phaser (renderer + tweens/particles) -->
+<script src="https://cdn.jsdelivr.net/npm/phaser@3.80.0/dist/phaser.js"></script>
+
+<style>
+  :root{
+    --ink:#ecf3ff; --mut:#b2c1e8;
+    --bg1:#0e1023; --bg2:#0a0c18;
+    --card:#141735; --card2:#0e1230; --ring:#ffffff24;
+    --g1:#71e1ff; --g2:#25c3ff; --g3:#c06bff; --gold:#ffd86a; --ok:#aef7c1; --warn:#ffb36a;
+    --btn1:#1b1f49; --btn2:#0f1238;
+    --accent:#7a5cff;
+    --maxw: 430px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:
+      radial-gradient(1200px 800px at 70% -20%, #20235a 0%, transparent 60%),
+      linear-gradient(180deg,var(--bg1),var(--bg2));
+    color:var(--ink);font:15px/1.45 Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+    display:grid;place-items:center;padding:10px;
+  }
+
+  .shell{width:min(95vw,var(--maxw)); display:flex; flex-direction:column; gap:10px}
+  .stage{width:100%; aspect-ratio:9/16; border-radius:22px; overflow:hidden;
+         box-shadow: 0 0 0 3px var(--ring) inset, 0 18px 50px rgba(0,0,0,.45); background:#0d0f24;}
+  /* HUD */
+  .hud{display:flex; justify-content:space-between; align-items:center; padding:2px 2px 0}
+  .levelTag{font-weight:800; letter-spacing:.5px; text-shadow:0 2px 10px rgba(0,0,0,.5)}
+  .pill{
+    display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px;
+    background:linear-gradient(180deg,#1b1e4a,#0f1238); border:1px solid var(--ring);
+    box-shadow:inset 0 0 24px rgba(192,107,255,.18), 0 6px 18px rgba(0,0,0,.35);
+    font-weight:700;
+  }
+  .cookie{
+    width:16px;height:16px; border-radius:50%; display:inline-block; position:relative;
+    background:radial-gradient(circle at 35% 35%, #ffdfb2, #ffb36a 70%); box-shadow:inset 0 0 0 2px #00000022;
+  }
+  .cookie:before,.cookie:after{
+    content:""; position:absolute; background:#b87040; border-radius:50%;
+  }
+  .cookie:before{width:4px;height:4px; left:4px; top:4px}
+  .cookie:after{width:5px;height:5px; right:3px; bottom:3px}
+
+  /* Card panel */
+  .card{
+    background:linear-gradient(180deg,var(--card),var(--card2)); 
+    border:1px solid var(--ring); border-radius:20px; padding:14px;
+    box-shadow: 0 10px 40px rgba(0,0,0,.42), inset 0 0 40px rgba(120,115,245,.12);
+  }
+  .bar{height:12px; background:#0f1337; border:1px solid var(--ring); border-radius:999px; overflow:hidden}
+  .fill{height:100%; width:0%; background:linear-gradient(90deg,var(--g1),var(--g3)); box-shadow:0 0 20px rgba(113,225,255,.45)}
+  .barLabel{display:flex; justify-content:space-between; font-size:12px; color:var(--mut); margin:6px 2px 10px}
+  .row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap}
+  .btn{
+    appearance:none; border:none; color:var(--ink); cursor:pointer; user-select:none;
+    padding:12px 18px; border-radius:14px; font-weight:800; letter-spacing:.4px;
+    background:linear-gradient(180deg,var(--btn1),var(--btn2)); border:1px solid var(--ring);
+    box-shadow: 0 10px 24px rgba(0,0,0,.35), inset 0 0 24px rgba(120,115,245,.18);
+  }
+  .btn:disabled{opacity:.5; filter:grayscale(.2); cursor:not-allowed}
+  .capacity{font-size:12px; color:var(--mut)}
+
+  /* Reward ladder */
+  .ladder{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:10px}
+  .reward{
+    background:linear-gradient(180deg,#1a1e4a,#11153e);
+    border:1px solid var(--ring); border-radius:14px; padding:8px; text-align:center;
+    box-shadow:inset 0 0 24px rgba(113,225,255,.12);
+  }
+  .reward .icon{
+    width:34px; height:34px; border-radius:10px; margin:0 auto 6px;
+    background:radial-gradient(circle at 35% 35%, #ffd86a, #ff9a2e 70%);
+    box-shadow:0 0 16px rgba(255,216,106,.35), inset 0 0 0 2px #00000022;
+    position:relative;
+  }
+  .reward .icon:after{
+    content:"★"; color:#3b2a00; position:absolute; inset:0; display:grid; place-items:center; font-size:18px; font-weight:900
+  }
+  .reward.locked{opacity:.5}
+  .reward.done .icon{background:radial-gradient(circle at 35% 35%, var(--ok), #15b88a 70%); box-shadow:0 0 16px rgba(174,247,193,.5)}
+  .reward small{color:var(--mut); display:block; font-size:11px}
+
+  .note{color:var(--mut); font-size:12px; text-align:center}
+</style>
+</head>
+<body>
+  <div class="shell">
+    <div class="hud">
+      <div class="levelTag">LEVEL <span id="lvlText">1</span>/8</div>
+      <div class="pill"><span class="cookie"></span>
+        <span id="cookiesText">0</span>/<span id="capText">50</span>
+      </div>
+    </div>
+
+    <!-- Phaser stage -->
+    <div id="stage" class="stage"></div>
+
+    <!-- Control/Progress Card -->
+    <div class="card">
+      <div class="bar"><div id="xpFill" class="fill"></div></div>
+      <div class="barLabel">
+        <span>XP: <b id="xpNow">0</b>/<span id="xpNeed">20</span></span>
+        <span id="nextRewardTxt">37 cookies left to next reward</span>
+      </div>
+      <div class="row">
+        <button id="feedBtn" class="btn">FEED</button>
+        <div class="capacity" id="regenTxt">Next cookie in —</div>
+      </div>
+      <div class="ladder" id="ladder"></div>
+      <div class="note">Progress is auto-saved on your device.</div>
+    </div>
+  </div>
+
+<script>
+/* ========= Simple audio beeps (no assets) ========= */
+const Snd = (() => {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  let ctx = null; const ensure=()=>ctx||(ctx=new Ctx());
+  function beep(freq=440, dur=.08, type='sine', gain=.03){
+    const ac = ensure(); const o=ac.createOscillator(); const g=ac.createGain();
+    o.type=type; o.frequency.value=freq; g.gain.value=gain; o.connect(g).connect(ac.destination);
+    o.start(); o.stop(ac.currentTime+dur);
+  }
+  return {
+    ok(){beep(880,.08,'square',.045)},
+    pop(){beep(680,.05,'square',.03)},
+    deny(){beep(180,.2,'triangle',.05)},
+    level(){beep(660,.11,'sawtooth',.055); setTimeout(()=>beep(990,.12,'sawtooth',.045),90);}
+  };
+})();
+
+/* ========= Game state ========= */
+const SAVE_KEY = 'pet_save_v1';
+const MAX_LEVEL=8;
+const XP_NEED=[20,30,40,60,80,100,120]; // need for levels 1->2,...,7->8
+const REWARD_LEVELS=[2,4,6,8];
+const CAPACITY=50;
+const REGEN_SEC=10; // 1 cookie every 10 seconds
+
+let state = {
+  level:1, xp:0,
+  cookies:8, capacity:CAPACITY,
+  fedTotal:0,
+  lastTick: Date.now()
+};
+load();
+
+function load(){
+  try{ const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'{}'); Object.assign(state, s); }
+  catch{}
+}
+function save(){
+  localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+}
+
+/* ======= UI Elements ======= */
+const lvlText = document.getElementById('lvlText');
+const cookiesText = document.getElementById('cookiesText');
+const capText = document.getElementById('capText');
+const xpNow = document.getElementById('xpNow');
+const xpNeed = document.getElementById('xpNeed');
+const xpFill = document.getElementById('xpFill');
+const feedBtn = document.getElementById('feedBtn');
+const regenTxt = document.getElementById('regenTxt');
+const nextRewardTxt = document.getElementById('nextRewardTxt');
+capText.textContent = state.capacity;
+
+/* ======= Reward Ladder Build ======= */
+const ladder = document.getElementById('ladder');
+function buildLadder(){
+  ladder.innerHTML='';
+  REWARD_LEVELS.forEach(L=>{
+    const cell = document.createElement('div'); cell.className='reward locked'; cell.dataset.level=L;
+    cell.innerHTML = `<div class="icon"></div><div><b>LV ${L}</b></div><small>Reward</small>`;
+    ladder.appendChild(cell);
+  });
+}
+buildLadder();
+
+/* ======= Phaser Scene: background + pet + particles ======= */
+let pet, eyeL, eyeR, heartEmitter;
+const stageEl = document.getElementById('stage');
+const config = {
+  type: Phaser.AUTO,
+  width: 360, height: 640,
+  parent: stageEl,
+  backgroundColor: '#0d1026',
+  physics: { default: 'arcade' },
+  scene: { preload, create, update }
+};
+const game = new Phaser.Game(config);
+
+function preload(){}
+
+function create(){
+  const w=this.scale.width, h=this.scale.height;
+
+  // Sky gradient with layered mountains & trees (all vectors)
+  const g=this.add.graphics();
+  // sky
+  g.fillGradientStyle(0x67b7ff,0x67b7ff,0x9ad6ff,0x9ad6ff,1);
+  g.fillRect(0,0,w,h);
+  // distant mountains
+  drawHills(g, 0x87a7ff, h*0.55, 48);
+  drawHills(g, 0x5f7cff, h*0.64, 64);
+  // crater ring
+  g.fillStyle(0xf6d069,1);
+  roundedRect(g, 40, h*0.60, w-80, 100, 28);
+  g.fillStyle(0xd7a24b,1);
+  roundedRect(g, 70, h*0.63, w-140, 60, 22);
+
+  // shrubs
+  drawShrub(this, 30, h*0.72, 0x123f39);
+  drawShrub(this, w-60, h*0.73, 0x163e58);
+
+  // Pet (cute blob)
+  pet = this.add.container(w/2, h*0.54);
+  const body = this.add.ellipse(0,0,160,120,0x67c3ff);
+  body.setStrokeStyle(8, 0x2a75a8, .7);
+  const belly = this.add.ellipse(0,10,110,70,0x9ddcff, .8);
+  const earL = this.add.ellipse(-56,-48,54,36,0x87d4ff); earL.setStrokeStyle(6,0x2a75a8,.6);
+  const earR = this.add.ellipse(56,-48,54,36,0x87d4ff); earR.setStrokeStyle(6,0x2a75a8,.6);
+  eyeL = this.add.ellipse(-28,-8,24,28,0x0e1a2a); eyeR = this.add.ellipse(28,-8,24,28,0x0e1a2a);
+  const glint1=this.add.ellipse(-32,-14,7,7,0xffffff,.9);
+  const glint2=this.add.ellipse(24,-14,7,7,0xffffff,.9);
+  const nose = this.add.ellipse(0,12,36,26,0x3b80d1);
+  pet.add([earL,earR,body,belly,eyeL,eyeR,glint1,glint2,nose]);
+
+  // Idle bounce
+  this.tweens.add({targets: pet, y: h*0.54+6, duration:1200, yoyo:true, repeat:-1, ease:'sine.inOut'});
+
+  // Blink
+  this.time.addEvent({delay:2400, loop:true, callback:()=>{
+    blink(eyeL, eyeR, this.tweens);
+  }});
+
+  // Heart particles on feed
+  const particles = this.add.particles(0xff6699);
+  heartEmitter = particles.createEmitter({
+    speed: {min:20,max:60}, angle: {min:260,max:280}, scale:{start:.9,end:0},
+    alpha:{start:.8,end:0}, lifespan: 900, quantity: 3, frequency: -1
+  });
+
+  // Enable sound on first pointer
+  this.input.once('pointerdown', ()=>Snd.pop());
+
+  // Hook feed button
+  feedBtn.addEventListener('click', ()=>{
+    if(!spendCookie()) { Snd.deny(); return; }
+    addXp(5); // each cookie = 5 XP
+    heartEmitter.explode(12, pet.x, pet.y-30);
+    // squish
+    this.tweens.add({targets: pet, scaleX:0.96, scaleY:1.04, duration:100, yoyo:true, ease:'quad.out'});
+    Snd.ok();
+  });
+
+  refreshUI();
+}
+
+function update(){
+  regenCookies();
+}
+
+/* ---- Helpers for drawing scenery ---- */
+function roundedRect(g,x,y,w,h,r){ g.fillRoundedRect(x,y,w,h,r); }
+function drawHills(g,color,baseY,amp){
+  g.fillStyle(color,1); g.beginPath();
+  g.moveTo(0,baseY);
+  for(let i=0;i<=12;i++){
+    const t=i/12, x=t*360, y=baseY - Math.sin(t*Math.PI*2)*amp*0.22 - (i%2?amp*0.1:0);
+    g.lineTo(x,y);
+  }
+  g.lineTo(360,640); g.lineTo(0,640); g.closePath(); g.fillPath();
+}
+function drawShrub(scene,x,y,color){
+  const g=scene.add.graphics(); g.fillStyle(color,1);
+  g.fillCircle(x,y,30); g.fillCircle(x+22,y+6,28); g.fillCircle(x-22,y+6,26);
+}
+
+/* ---- Pet blink ---- */
+function blink(l,r,t){
+  t.add({targets:[l,r], scaleY:.2, duration:70, yoyo:true, ease:'sine.inOut'});
+}
+
+/* ========= Progress / Rules ========= */
+function addXp(n){
+  if(state.level>=MAX_LEVEL) return;
+  state.xp += n; state.fedTotal += 1;
+  const need = XP_NEED[state.level-1];
+  if(state.xp >= need){
+    state.xp -= need;
+    state.level = Math.min(MAX_LEVEL, state.level+1);
+    Snd.level();
+  }
+  save(); refreshUI();
+}
+function spendCookie(){
+  if(state.cookies<=0) return false;
+  state.cookies--; save(); refreshUI(); return true;
+}
+
+/* Cookie regeneration (offline-friendly) */
+function regenCookies(){
+  const now=Date.now();
+  const elapsed = Math.floor((now - state.lastTick)/1000);
+  if(elapsed >= 1){
+    const ticks = Math.floor(elapsed / REGEN_SEC);
+    if(ticks>0 && state.cookies < state.capacity){
+      state.cookies = Math.min(state.capacity, state.cookies + ticks);
+      state.lastTick += ticks*REGEN_SEC*1000;
+      save(); refreshUI();
+    }
+    if(ticks===0) { /* just update text countdown */ refreshUI(false); }
+  }
+}
+
+/* ========= UI update ========= */
+function refreshUI(updateLadder=true){
+  lvlText.textContent = state.level;
+  cookiesText.textContent = state.cookies;
+  xpNow.textContent = state.xp;
+  const need = XP_NEED[state.level-1] || XP_NEED[XP_NEED.length-1];
+  xpNeed.textContent = (state.level>=MAX_LEVEL)? state.xp : need;
+  const pct = (state.level>=MAX_LEVEL)? 100 : Math.max(0, Math.min(100, (state.xp/need)*100));
+  xpFill.style.width = pct + '%';
+
+  // next cookie countdown
+  const secs = REGEN_SEC - Math.floor((Date.now()-state.lastTick)/1000 % REGEN_SEC);
+  regenTxt.textContent = (state.cookies>=state.capacity) ? 'Capacity full' : `Next cookie in ${secs}s`;
+
+  // next reward label (based on next reward level)
+  const nextLvl = REWARD_LEVELS.find(L=> L>state.level) || MAX_LEVEL;
+  const lvlGap = Math.max(0, nextLvl - state.level);
+  nextRewardTxt.textContent = (lvlGap===0) ? 'Final reward reached' : `${lvlGap} level(s) to next reward`;
+
+  // button enable
+  feedBtn.disabled = state.cookies<=0 || state.level>=MAX_LEVEL;
+
+  if(updateLadder){
+    document.querySelectorAll('.reward').forEach(el=>{
+      const L=parseInt(el.dataset.level,10);
+      el.classList.toggle('done', state.level>=L);
+      el.classList.toggle('locked', state.level<L);
+    });
+  }
+}
+
+/* Initialize lastTick so countdown shows immediately */
+if(!state.lastTick){ state.lastTick = Date.now(); save(); }
+refreshUI();
+</script>
+</body>
+</html>
