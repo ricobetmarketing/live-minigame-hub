@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>Real Snake — 贪吃蛇</title>
+<title>Real Snake — 贪吃蛇 (Fixed Mobile)</title>
 <style>
   :root{
     --bg:#0b0c19; --card:#0f1026; --ring:#ffffff1a;
@@ -31,6 +31,7 @@
   .hud{
     position:absolute; inset:auto 0 100% 0; display:flex; gap:14px; align-items:center; justify-content:space-between;
     padding:10px 4px 16px; max-width:560px; margin:0 auto; width:min(92vw,560px);
+    z-index:3; /* above pad */
   }
   .badge{
     padding:8px 12px; border-radius:12px; background:#121331; border:1px solid var(--ring);
@@ -47,6 +48,7 @@
     background:#0008; backdrop-filter:blur(4px);
     text-align:center; padding:24px;
     border-radius:14px;
+    z-index:5; /* on top of everything */
   }
   h1{
     margin:0 0 10px; font-size:34px;
@@ -58,13 +60,24 @@
   label.switch{
     display:flex; align-items:center; gap:8px; background:#10122c; border:1px solid var(--ring); padding:8px 12px; border-radius:999px;
   }
+
+  /* Mobile swipe pad: hidden by default; shown only while playing */
   .mobile-ctrl{
-    position:absolute; inset:auto 0 0 0; display:flex; justify-content:center; pointer-events:none;
+    position:absolute; left:50%; bottom:8px; transform:translateX(-50%);
+    width:100%; display:none; justify-content:center; pointer-events:none;
+    z-index:2; /* below HUD/overlay, above canvas */
   }
+  .mobile-ctrl.show{ display:flex; }
   .swipe-pad{
-    width:220px; height:220px; border-radius:50%;
-    background:#0d0f23cc; border:1px dashed #ffffff22; margin:16px 0;
+    width:200px; height:200px; border-radius:50%;
+    background:#0d0f23cc; border:1px dashed #ffffff22; margin:8px 0;
     pointer-events:auto; touch-action:none;
+    box-shadow:0 6px 24px #0008;
+  }
+
+  /* Make pad smaller on small phones so it never blocks center buttons */
+  @media (max-width:420px){
+    .swipe-pad{ width:160px; height:160px; }
   }
 </style>
 </head>
@@ -98,7 +111,7 @@
       </div>
     </div>
 
-    <div class="mobile-ctrl">
+    <div class="mobile-ctrl" id="mobileCtrl">
       <div id="pad" class="swipe-pad" aria-label="Swipe to steer"></div>
     </div>
   </div>
@@ -107,33 +120,32 @@
 (() => {
   const canvas = document.getElementById('c');
   const ctx = canvas.getContext('2d');
+  const mobileCtrl = document.getElementById('mobileCtrl');
+  const pad = document.getElementById('pad');
 
   // ----- CONFIG -----
   const W = canvas.width, H = canvas.height;
-  const GRID = 20;               // for subtle guide + spawn snapping
-  const BASE_SPEED = 120;        // px/sec starting speed
-  const MAX_SPEED = 280;         // cap
-  const SPEED_PER_FOOD = 8;      // add speed per eat
-  const SEGMENT_SPACING = 10;    // px between snake samples
+  const GRID = 20;
+  const BASE_SPEED = 120;
+  const MAX_SPEED = 280;
+  const SPEED_PER_FOOD = 8;
+  const SEGMENT_SPACING = 10;
   const HEAD_RADIUS = 7;
   const BODY_RADIUS = 6;
-  const PATH_MAX = 4000;         // max path length history
-  const WALL_COUNT = 14;         // random blocks
+  const PATH_MAX = 4000;
+  const WALL_COUNT = 14;
   const FOOD_RADIUS = 6;
 
   // ----- STATE -----
   let playing = false, paused = false, lastT = 0;
   let score = 0, speed = BASE_SPEED, growth = 0, targetAngle = 0, angle = 0;
   let wrapEdges = false, wallsOn = true;
-
-  // Path-based snake: head moves continuously; body samples along the path.
-  /** @type {{x:number,y:number}[]} */
-  let path = [];         // deque of points (newest at front)
-  let lengthDesired = 140; // initial length
+  let path = [];
+  let lengthDesired = 160;
   let food = null;
   let walls = [];
 
-  // ----- UI ELs -----
+  // ----- UI -----
   const scoreEl = document.getElementById('score');
   const lenEl   = document.getElementById('len');
   const spdEl   = document.getElementById('speed');
@@ -141,31 +153,26 @@
   const startBtn= document.getElementById('startBtn');
   const howBtn  = document.getElementById('howBtn');
   const pauseBtn= document.getElementById('pauseBtn');
-  const pad     = document.getElementById('pad');
   const wallsToggle = document.getElementById('wallsToggle');
   const wrapToggle  = document.getElementById('wrapToggle');
 
   wallsToggle.addEventListener('change', () => { wallsOn = wallsToggle.checked; drawStatic(); });
   wrapToggle.addEventListener('change', () => { wrapEdges = wrapToggle.checked; });
 
-  // ----- HELPERS -----
+  // Helpers
   const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
   function dist(a,b){const dx=a.x-b.x, dy=a.y-b.y; return Math.hypot(dx,dy);}
   function point(x,y){return {x,y};}
-
   function randomCell() {
-    // Snap to grid center-ish to look nice
     const gx = Math.floor(Math.random()*(W/GRID-2))+1;
     const gy = Math.floor(Math.random()*(H/GRID-2))+1;
     return point(gx*GRID + GRID/2, gy*GRID + GRID/2);
   }
-
   function spawnFood(){
     let p;
     do { p = randomCell(); } while (walls.some(w => p.x>w.x-10 && p.x<w.x+w.w+10 && p.y>w.y-10 && p.y<w.y+w.h+10));
     food = p;
   }
-
   function spawnWalls(){
     walls = [];
     for (let i=0;i<WALL_COUNT;i++){
@@ -176,42 +183,29 @@
       walls.push({x,y,w,h});
     }
   }
-
   function init(){
-    score = 0;
-    speed = BASE_SPEED;
-    growth = 0;
-    lengthDesired = 160;
-    targetAngle = angle = 0;
-    path = [];
-    const start = point(W*0.5, H*0.6);
-    path.unshift({...start});
-    spawnFood();
-    spawnWalls();
-    updateHUD();
-    drawStatic();
+    score = 0; speed = BASE_SPEED; growth = 0; lengthDesired = 160; targetAngle = angle = 0;
+    path = []; const start = point(W*0.5, H*0.6); path.unshift({...start});
+    spawnFood(); spawnWalls(); updateHUD(); drawStatic();
   }
-
   function updateHUD(){
     scoreEl.textContent = score;
     lenEl.textContent = Math.round(lengthDesired);
     spdEl.textContent = (speed/BASE_SPEED).toFixed(2)+'x';
   }
 
-  // ----- INPUT (keyboard) -----
+  // Keyboard
   window.addEventListener('keydown', (e)=>{
     if(!playing) return;
     const k = e.key.toLowerCase();
     if (k==='arrowleft'||k==='a')  targetAngle -= Math.PI/2;
     if (k==='arrowright'||k==='d') targetAngle += Math.PI/2;
-    if (k==='arrowup'||k==='w')    targetAngle = targetAngle; // noop, keep heading
-    if (k==='arrowdown'||k==='s')  targetAngle += Math.PI;    // flip
+    if (k==='arrowdown'||k==='s')  targetAngle += Math.PI; // flip
   });
 
-  // ----- INPUT (swipe) -----
+  // Swipe (pad is only visible while playing; won’t block overlay)
   (()=> {
     let dragging=false, sx=0, sy=0;
-    const TH=18; // threshold
     function onStart(x,y){ dragging=true; sx=x; sy=y; }
     function onMove(x,y){
       if(!dragging) return;
@@ -223,21 +217,19 @@
       }
     }
     function onEnd(){ dragging=false; }
-    pad.addEventListener('pointerdown',e=>{pad.setPointerCapture(e.pointerId); onStart(e.clientX,e.clientY);});
-    pad.addEventListener('pointermove', e=>onMove(e.clientX,e.clientY));
+    pad.addEventListener('pointerdown',e=>{ if(!playing||paused) return; pad.setPointerCapture(e.pointerId); onStart(e.clientX,e.clientY);});
+    pad.addEventListener('pointermove', e=>{ if(!playing||paused) return; onMove(e.clientX,e.clientY);});
     pad.addEventListener('pointerup',   onEnd);
     pad.addEventListener('pointercancel',onEnd);
   })();
 
-  // ----- DRAW STATIC (grid & walls) -----
+  // Layered draws
   function drawStatic(){
     ctx.clearRect(0,0,W,H);
-    // grid
     ctx.strokeStyle = 'rgba(255,255,255,0.05)';
     ctx.lineWidth = 1;
     for(let x=0;x<=W;x+=GRID){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
     for(let y=0;y<=H;y+=GRID){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
-
     if(wallsOn){
       for(const w of walls){
         ctx.fillStyle = 'rgba(255,200,87,0.12)';
@@ -247,8 +239,6 @@
       }
     }
   }
-
-  // Rounded rect helper
   function roundRect(ctx,x,y,w,h,r, fill, stroke){
     const rr = Math.min(r, w/2, h/2);
     ctx.beginPath();
@@ -261,21 +251,18 @@
     if (stroke) ctx.stroke();
   }
 
-  // ----- RENDER SNAKE (curved body sampled along path) -----
   function render(foodPulse){
     drawStatic();
-
     // Food
     if (food){
       const pul = 0.6 + 0.4*Math.sin(foodPulse*4);
       ctx.shadowColor = '#ff6ec4';
       ctx.shadowBlur = 18*pul;
       ctx.fillStyle = '#ff6ec4';
-      ctx.beginPath(); ctx.arc(food.x, food.y, FOOD_RADIUS, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(food.x, food.y, 6, 0, Math.PI*2); ctx.fill();
       ctx.shadowBlur = 0;
     }
-
-    // Build sample points along the path according to desired body length.
+    // Build samples along path
     const samples = [];
     let acc = 0, idx = 0;
     samples.push(path[0]);
@@ -283,37 +270,29 @@
       const a = path[idx], b = path[idx+1];
       const segLen = dist(a,b);
       if (acc + segLen > SEGMENT_SPACING * (samples.length)){
-        // interpolate at needed distance
         const need = SEGMENT_SPACING * (samples.length) - acc;
-        const t = clamp(need / segLen, 0, 1);
+        const t = Math.max(0, Math.min(1, need / segLen));
         samples.push({ x: a.x + (b.x-a.x)*t, y: a.y + (b.y-a.y)*t });
       }else{
-        idx++;
-        acc += segLen;
+        idx++; acc += segLen;
       }
     }
-
-    // Draw body circles tapering slightly
+    // Body
     for (let i=samples.length-1;i>=1;i--){
       const t = i/(samples.length-1);
       const r = BODY_RADIUS * (0.85 + 0.15*Math.sin(t*Math.PI));
-      const g = Math.floor(190 + 50*(1-t));
       ctx.fillStyle = `rgba(116,255,180,${0.25+0.75*(1-t)})`;
       ctx.beginPath(); ctx.arc(samples[i].x, samples[i].y, r+2, 0, Math.PI*2); ctx.fill();
-
-      // main body
       ctx.fillStyle = '#74ffb4';
       ctx.beginPath(); ctx.arc(samples[i].x, samples[i].y, r, 0, Math.PI*2); ctx.fill();
     }
-
-    // Head (brighter)
+    // Head
     const h = samples[0];
     ctx.shadowColor = '#d9ff7a'; ctx.shadowBlur = 22;
     ctx.fillStyle = '#d9ff7a';
     ctx.beginPath(); ctx.arc(h.x, h.y, HEAD_RADIUS, 0, Math.PI*2); ctx.fill();
     ctx.shadowBlur = 0;
-
-    // Head eyes (tiny)
+    // Eyes
     const eyeOff = 4;
     const ex = Math.cos(angle) * eyeOff, ey = Math.sin(angle) * eyeOff;
     ctx.fillStyle = '#0b0c19';
@@ -321,31 +300,27 @@
     ctx.beginPath(); ctx.arc(h.x + ex + ey*0.4, h.y + ey - ex*0.4, 1.6, 0, Math.PI*2); ctx.fill();
   }
 
-  // ----- GAME LOOP -----
+  // Loop
   function tick(ts){
     if (!playing || paused){ lastT = ts; requestAnimationFrame(tick); return; }
     if (!lastT) lastT = ts;
     const dt = (ts - lastT) / 1000;
     lastT = ts;
-
-    // Smooth steer toward targetAngle
+    // Steer
     const diff = ((targetAngle - angle + Math.PI*3) % (Math.PI*2)) - Math.PI;
-    angle += clamp(diff, -4*dt, 4*dt); // limit turn speed for nice curve
-
-    // Move head forward
+    angle += Math.max(-4*dt, Math.min(4*dt, diff));
+    // Move
     const head = {...path[0]};
     head.x += Math.cos(angle) * speed * dt;
     head.y += Math.sin(angle) * speed * dt;
-
-    // Wrap/Collide edges
+    // Edges
     if (wrapEdges){
       if (head.x<0) head.x+=W; if (head.x>W) head.x-=W;
       if (head.y<0) head.y+=H; if (head.y>H) head.y-=H;
     }else{
       if (head.x<0||head.x>W||head.y<0||head.y>H) return gameOver();
     }
-
-    // Collide with walls
+    // Walls
     if (wallsOn){
       for(const w of walls){
         if (head.x>w.x && head.x<w.x+w.w && head.y>w.y && head.y<w.y+w.h){
@@ -353,45 +328,36 @@
         }
       }
     }
-
-    // Add head to path
+    // Path
     path.unshift(head);
-
-    // Trim path to desired length + slack
     let total = 0, i=0;
     while (i < path.length-1){
-      const d = dist(path[i], path[i+1]);
-      total += d;
-      if (total > PATH_MAX) { path.pop(); } // hard cap
+      total += dist(path[i], path[i+1]);
       i++;
       if (total > lengthDesired + 60) break;
     }
     while (path.length > i+2) path.pop();
-
-    // Self collision: check head against body samples (skip near-head)
     for (let j=8; j<path.length; j+=4){
       if (dist(head, path[j]) < BODY_RADIUS+2) return gameOver();
     }
-
-    // Eat food
+    // Food
     if (food && dist(head, food) < HEAD_RADIUS + FOOD_RADIUS){
-      score++;
-      growth += 28;                 // add length
-      lengthDesired += growth;
-      growth = 0;
-      speed = clamp(speed + SPEED_PER_FOOD, BASE_SPEED, MAX_SPEED);
-      spawnFood();
-      updateHUD();
+      score++; lengthDesired += 28; speed = Math.min(MAX_SPEED, speed + SPEED_PER_FOOD);
+      spawnFood(); updateHUD();
     }
-
     render(ts/1000);
     requestAnimationFrame(tick);
   }
 
-  // ----- CONTROL -----
+  // Control
+  function showPad(show){
+    if (show) mobileCtrl.classList.add('show');
+    else      mobileCtrl.classList.remove('show');
+  }
   function start(){
     playing = true; paused = false; lastT = 0;
     overlay.style.display='none';
+    showPad(true);         // <-- only visible during play
     init();
     requestAnimationFrame(tick);
   }
@@ -399,9 +365,12 @@
     if (!playing) return;
     paused = !paused;
     pauseBtn.textContent = paused ? 'Resume' : 'Pause';
+    // While paused, prevent accidental swipes
+    showPad(!paused);
   }
   function gameOver(){
     playing = false;
+    showPad(false);        // <-- hide so overlay is fully tappable
     overlay.style.display='flex';
     overlay.innerHTML = `
       <h1>Game Over</h1>
@@ -421,7 +390,6 @@
         <button id="howBtn2" class="btn secondary">HOW TO PLAY</button>
       </div>
     `;
-    // rebind toggles
     overlay.querySelector('#restartBtn').onclick = start;
     overlay.querySelector('#howBtn2').onclick = showHow;
     overlay.querySelector('#wallsToggle2').onchange = (e)=>{wallsOn=e.target.checked;};
@@ -431,10 +399,8 @@
     overlay.innerHTML = `
       <h1>How to Play</h1>
       <p class="hint" style="max-width:520px">
-        Steer with <b>Arrow keys / WASD</b> or <b>swipe</b> on the round pad.<br/>
-        Eat the glowing orb to grow and speed up. Avoid walls (toggleable) and your own body.<br/>
-        <br/>
-        <b>Tips:</b> Smooth turns have a slight turning radius—plan ahead like classic snake.
+        Steer with <b>Arrow keys / WASD</b> or <b>swipe</b> on the round pad at the bottom.<br/>
+        Eat the glowing orb to grow and speed up. Avoid walls (toggleable) and your own body.
       </p>
       <div style="display:flex; gap:10px; margin-top:16px">
         <button id="startBtn2" class="btn">START</button>
@@ -442,16 +408,14 @@
       </div>`;
     overlay.querySelector('#startBtn2').onclick = start;
     overlay.querySelector('#backBtn').onclick = () => {
-      overlay.innerHTML = '';
       overlay.style.display='none';
-      start();
     };
   }
 
   // Buttons
-  startBtn.onclick = start;
-  howBtn.onclick = showHow;
-  pauseBtn.onclick = pauseToggle;
+  document.getElementById('startBtn').onclick = start;
+  document.getElementById('howBtn').onclick = showHow;
+  document.getElementById('pauseBtn').onclick = pauseToggle;
 
   // First paint
   init(); render(0);
