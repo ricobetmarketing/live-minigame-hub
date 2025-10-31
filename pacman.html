@@ -36,7 +36,7 @@
       0 0 0 3px var(--ring) inset, 0 10px 30px rgba(0,0,0,.5);}
   .hud{width:min(92vw,520px);display:flex;justify-content:space-between;align-items:center}
   .score{font-weight:700;letter-spacing:.5px}
-  .btns{display:flex;gap:8px;align-items:center}
+  .btns{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .btn{
     background:linear-gradient(180deg,#1a1b3f,#0f1030);
     border:1px solid var(--ring);color:var(--ui);padding:8px 12px;
@@ -183,7 +183,13 @@ for (let y=0; y<rows.length; y++){
   }
 }
 // Top header paths
-for (let y=1;y<yOffset-1;y++) for (let x=1;x<W-1;x++) if(!(x%2&&y%2)) MAZE[y][x]=0;
+for (let y=1;y<yOffset-1;y++) for(let x=1;x<W-1;x++) if(!(x%2&&y%2)) MAZE[y][x]=0;
+
+// ====== IMPORTANT: define start positions BEFORE spawn clearing ======
+const DIRS = {left:{x:-1,y:0}, right:{x:1,y:0}, up:{x:0,y:-1}, down:{x:0,y:1}};
+const startPac = {x:12.5, y:26, dir:'left'};
+const ghostHomes = [{x:12.5,y:18},{x:13.5,y:18},{x:14.5,y:18},{x:13.5,y:19}];
+const ghostColors = ['--ghost-red','--ghost-pink','--ghost-cyan','--ghost-orange'];
 
 // ----- Randomized pellets & powerups -----
 const T_EMPTY=0, T_WALL=1, T_DOOR=9, T_DOT=2, T_PWR=3;
@@ -193,7 +199,6 @@ function placePelletsRandom(){
   pellets=0;
   for(let y=0;y<H;y++)for(let x=0;x<W;x++){
     if(MAZE[y][x]===T_EMPTY){
-      // 75% chance a dot, 3% chance power pellet, rest empty
       const r = Math.random();
       if(r<0.03){ MAZE[y][x]=T_PWR; pellets++; }
       else if(r<0.78){ MAZE[y][x]=T_DOT; pellets++; }
@@ -222,6 +227,7 @@ function ensureSpawnClear(){
   if (MAZE[ry+2]?.[rx] !== undefined) MAZE[ry+2][rx] = T_EMPTY;
 }
 
+// Now safe to call (order FIX)
 placePelletsRandom();
 ensureSpawnClear();
 
@@ -242,13 +248,8 @@ function spawnTool(){
 }
 setInterval(spawnTool, 4000);
 
-// ----- Entities
-const DIRS = {left:{x:-1,y:0}, right:{x:1,y:0}, up:{x:0,y:-1}, down:{x:0,y:1}};
+// ----- Entities / state
 let pac, ghosts=[];
-const startPac = {x:12.5, y:26, dir:'left'};
-const ghostHomes = [{x:12.5,y:18},{x:13.5,y:18},{x:14.5,y:18},{x:13.5,y:19}];
-const ghostColors = ['--ghost-red','--ghost-pink','--ghost-cyan','--ghost-orange'];
-
 let score=0, frightened=0, combo=0, gameOver=false, running=false;
 let pacSpeedBase=.09, pacSpeed= pacSpeedBase;
 let freezeTimer=0;
@@ -337,7 +338,7 @@ function update(step){
 
   // Move with more-forgiving look-ahead
   const d = DIRS[pac.dir];
-  const aheadX = pac.x + d.x * 0.40;   // <= was 0.55
+  const aheadX = pac.x + d.x * 0.40;
   const aheadY = pac.y + d.y * 0.40;
   const spd = pacSpeed;
   if(canWalk(aheadX, aheadY)){
@@ -491,12 +492,6 @@ function drawGhost(x,y,color){
   ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(x-3,y-2,2,0,Math.PI*2); ctx.arc(x+3,y-2,2,0,Math.PI*2); ctx.fill();
   ctx.fillStyle='#2955ff'; ctx.beginPath(); ctx.arc(x-3,y-2,1.2,0,Math.PI*2); ctx.arc(x+3,y-2,1.2,0,Math.PI*2); ctx.fill();
 }
-
-// ----- Init positions
-(function place(){
-  pac.x=startPac.x; pac.y=startPac.y;
-  ghosts.forEach((g,i)=>{g.x=ghostHomes[i].x; g.y=ghostHomes[i].y;});
-})();
 
 // ----- Overlay control
 function showGate(show){ document.getElementById('gate').classList.toggle('hide', !show); }
