@@ -3,35 +3,61 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<title>Real Snake — 贪吃蛇 (Fixed Mobile)</title>
+<title>Real Snake — Responsive + Fixed Edge Controls</title>
 <style>
   :root{
-    --bg:#0b0c19; --card:#0f1026; --ring:#ffffff1a;
-    --ink:#eaf2ff; --mut:#9fb0d9; --acc:#ffd86a;
-    --g1:#71e1ff; --g2:#25c3ff; --g3:#c06bff;
+    /* Size presets control the max canvas size */
+    --board-max: 720px; /* Large default; changed by size buttons */
+    --ring:#ffffff1a; --ink:#eaf2ff; --mut:#9fb0d9;
+    --bg1:#0b0c19; --bg2:#060712;
     --snake:#74ffb4; --head:#d9ff7a; --food:#ff6ec4; --wall:#ffc857;
   }
   *{box-sizing:border-box; user-select:none}
   html,body{height:100%}
   body{
-    margin:0; background:
+    margin:0; color:var(--ink);
+    background:
       radial-gradient(1200px 800px at 50% -10%, #242a60aa 0%, transparent 70%),
-      linear-gradient(180deg,#0b0c19,#060712);
-    color:var(--ink); font:15px/1.5 Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
-    display:grid; place-items:center;
+      linear-gradient(180deg,var(--bg1),var(--bg2));
+    font:15px/1.5 Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+    display:flex; flex-direction:column; align-items:center;
   }
+
+  /* Top controls (placement + size) */
+  .toolbar{
+    width:min(98vw,1100px); display:flex; flex-wrap:wrap; gap:8px 12px;
+    align-items:center; justify-content:space-between; padding:10px 8px 6px;
+  }
+  .group{display:flex; gap:8px; flex-wrap:wrap}
+  .chip{
+    border:1px solid var(--ring); background:#121331; color:#eaf2ff; padding:6px 10px; border-radius:999px; cursor:pointer;
+  }
+  .chip.active{background:linear-gradient(90deg,#ff6ec4,#7873f5); color:#0b0c19; border-color:transparent; font-weight:700}
+  .sep{opacity:.45; margin:0 4px}
+
+  /* Stage decides left/center/right placement */
+  .stage{
+    width:100%; max-width:1100px; margin:2px auto 14px;
+    display:flex; /* placement overridden by classes below */
+  }
+  .place-left  .stage{ justify-content:flex-start; }
+  .place-center .stage{ justify-content:center; }
+  .place-right .stage{ justify-content:flex-end; }
+
   .wrap{position:relative}
   canvas{
-    width:min(92vw,560px); height:min(92vw,560px);
-    max-width:560px; max-height:560px;
+    width:min(95vw,var(--board-max)); height:min(95vw,var(--board-max));
+    max-width:var(--board-max); max-height:var(--board-max);
     background:linear-gradient(180deg,#0e0f22,#070813);
     border:1px solid var(--ring); border-radius:14px;
     box-shadow:0 20px 60px #0006, inset 0 0 50px #0008;
   }
+
+  /* HUD above canvas */
   .hud{
     position:absolute; inset:auto 0 100% 0; display:flex; gap:14px; align-items:center; justify-content:space-between;
-    padding:10px 4px 16px; max-width:560px; margin:0 auto; width:min(92vw,560px);
-    z-index:3; /* above pad */
+    padding:10px 4px 12px; width:100%;
+    z-index:3;
   }
   .badge{
     padding:8px 12px; border-radius:12px; background:#121331; border:1px solid var(--ring);
@@ -43,12 +69,12 @@
     box-shadow:0 8px 24px #6c5ce733;
   }
   .btn.secondary{background:linear-gradient(90deg,#71e1ff,#25c3ff); color:#06121a}
+
+  /* Overlay screens (Start / HowTo / GameOver) */
   .overlay{
     position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
     background:#0008; backdrop-filter:blur(4px);
-    text-align:center; padding:24px;
-    border-radius:14px;
-    z-index:5; /* on top of everything */
+    text-align:center; padding:24px; border-radius:14px; z-index:5;
   }
   h1{
     margin:0 0 10px; font-size:34px;
@@ -61,149 +87,348 @@
     display:flex; align-items:center; gap:8px; background:#10122c; border:1px solid var(--ring); padding:8px 12px; border-radius:999px;
   }
 
-  /* Mobile swipe pad: hidden by default; shown only while playing */
+  /* Swipe Pad (center-bottom). Hidden unless playing & swipe mode enabled */
   .mobile-ctrl{
     position:absolute; left:50%; bottom:8px; transform:translateX(-50%);
     width:100%; display:none; justify-content:center; pointer-events:none;
-    z-index:2; /* below HUD/overlay, above canvas */
+    z-index:2;
   }
   .mobile-ctrl.show{ display:flex; }
   .swipe-pad{
     width:200px; height:200px; border-radius:50%;
     background:#0d0f23cc; border:1px dashed #ffffff22; margin:8px 0;
-    pointer-events:auto; touch-action:none;
-    box-shadow:0 6px 24px #0008;
+    pointer-events:auto; touch-action:none; box-shadow:0 6px 24px #0008;
+  }
+  @media (max-width:420px){ .swipe-pad{ width:160px; height:160px; } }
+
+  /* Fixed edge controls — easier thumbs on both mobile & desktop */
+  .edge-controls{
+    position:fixed; inset:auto 0 12px 0; width:100%;
+    display:none; pointer-events:none; z-index:6; /* above canvas, below overlay */
+  }
+  .edge-controls.show{ display:block; }
+  .edge-btn{
+    position:fixed; bottom:12px; pointer-events:auto;
+    width:68px; height:68px; border-radius:16px; border:1px solid #ffffff24;
+    background:#0d0f23cc; color:#eaf2ff; font-weight:900; font-size:22px;
+    display:grid; place-items:center; box-shadow:0 10px 28px #0008;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .edge-btn.left{  left:12px;  }
+  .edge-btn.right{ right:12px; }
+  .edge-btn:active{ transform:translateY(1px); }
+
+  /* Compact pause (top-left of canvas) stays too */
+  .pause-mini{
+    position:absolute; left:8px; top:8px; z-index:4;
+    padding:6px 10px; border-radius:999px; border:1px solid #ffffff24;
+    background:#0d0f23cc; color:#eaf2ff; font-weight:700; font-size:12px;
   }
 
-  /* Make pad smaller on small phones so it never blocks center buttons */
-  @media (max-width:420px){
-    .swipe-pad{ width:160px; height:160px; }
-  }
+  /* Size helpers (changed by JS via body data attr) */
+  body[data-size="S"]{ --board-max: 480px; }
+  body[data-size="M"]{ --board-max: 600px; }
+  body[data-size="L"]{ --board-max: 720px; }
+
+  /* Placement helpers set on body: place-left/center/right */
 </style>
 </head>
-<body>
-  <div class="wrap">
-    <div class="hud">
-      <div class="badge">Score: <b id="score">0</b></div>
-      <div class="badge">Speed: <b id="speed">1.00x</b></div>
-      <div class="badge">Length: <b id="len">0</b></div>
-      <button id="pauseBtn" class="btn secondary">Pause</button>
+<body class="place-center" data-size="L">
+  <!-- Top toolbar: placement + size -->
+  <div class="toolbar">
+    <div class="group">
+      <span class="sep">Place:</span>
+      <button class="chip active"  id="placeCenter">Center</button>
+      <button class="chip"         id="placeLeft">Left</button>
+      <button class="chip"         id="placeRight">Right</button>
     </div>
-
-    <canvas id="c" width="560" height="560"></canvas>
-
-    <div id="overlay" class="overlay">
-      <h1>🐍 Real Snake</h1>
-      <p class="hint">WASD / Arrow keys to steer. Swipe on mobile.</p>
-      <div class="toggles">
-        <label class="switch">
-          <input id="wallsToggle" type="checkbox" checked>
-          <span>Walls ON</span>
-        </label>
-        <label class="switch">
-          <input id="wrapToggle" type="checkbox">
-          <span>Wrap at edges</span>
-        </label>
-      </div>
-      <div style="display:flex; gap:10px; margin-top:16px">
-        <button id="startBtn" class="btn">START</button>
-        <button id="howBtn" class="btn secondary">HOW TO PLAY</button>
-      </div>
-    </div>
-
-    <div class="mobile-ctrl" id="mobileCtrl">
-      <div id="pad" class="swipe-pad" aria-label="Swipe to steer"></div>
+    <div class="group">
+      <span class="sep">Size:</span>
+      <button class="chip" id="sizeS">Small</button>
+      <button class="chip" id="sizeM">Medium</button>
+      <button class="chip active" id="sizeL">Large</button>
     </div>
   </div>
 
+  <div class="stage">
+    <div class="wrap">
+      <button id="pauseMini" class="pause-mini">Pause</button>
+
+      <div class="hud">
+        <div class="badge">Score: <b id="score">0</b></div>
+        <div class="badge">Speed: <b id="speed">1.00x</b></div>
+        <div class="badge">Length: <b id="len">0</b></div>
+        <button id="pauseBtn" class="btn secondary">Pause</button>
+      </div>
+
+      <canvas id="c" width="720" height="720"></canvas>
+
+      <div id="overlay" class="overlay">
+        <h1>🐍 Real Snake</h1>
+        <p class="hint">Keyboard: Arrow/WASD · Mobile: swipe or edge buttons</p>
+        <div class="toggles">
+          <label class="switch"><input id="wallsToggle" type="checkbox" checked><span>Walls ON</span></label>
+          <label class="switch"><input id="wrapToggle" type="checkbox"><span>Wrap at edges</span></label>
+          <label class="switch"><input id="dpadToggle" type="checkbox" checked><span>Use edge buttons (disable swipe)</span></label>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:16px">
+          <button id="startBtn" class="btn">START</button>
+          <button id="howBtn" class="btn secondary">HOW TO PLAY</button>
+        </div>
+      </div>
+
+      <!-- Swipe Pad (shown only if swipe mode enabled) -->
+      <div class="mobile-ctrl" id="mobileCtrl">
+        <div id="pad" class="swipe-pad" aria-label="Swipe to steer"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fixed edge controls (left/right) -->
+  <div class="edge-controls" id="edgeControls">
+    <button id="turnLeftEdge"  class="edge-btn left">⟲</button>
+    <button id="turnRightEdge" class="edge-btn right">⟳</button>
+  </div>
+
 <script>
-(() => {
+(()=> {
   const canvas = document.getElementById('c');
   const ctx = canvas.getContext('2d');
+
+  // Toolbar controls (placement + size)
+  const body = document.body;
+  const placeBtns = {
+    center: document.getElementById('placeCenter'),
+    left:   document.getElementById('placeLeft'),
+    right:  document.getElementById('placeRight')
+  };
+  const sizeBtns = {
+    S: document.getElementById('sizeS'),
+    M: document.getElementById('sizeM'),
+    L: document.getElementById('sizeL')
+  };
+  function setPlacement(p){
+    body.classList.remove('place-left','place-center','place-right');
+    body.classList.add('place-'+p);
+    Object.values(placeBtns).forEach(b=>b.classList.remove('active'));
+    if(p==='center') placeBtns.center.classList.add('active');
+    if(p==='left')   placeBtns.left.classList.add('active');
+    if(p==='right')  placeBtns.right.classList.add('active');
+  }
+  function setSize(s){
+    body.setAttribute('data-size', s);
+    Object.values(sizeBtns).forEach(b=>b.classList.remove('active'));
+    sizeBtns[s].classList.add('active');
+    // keep canvas internal resolution high for crisper lines
+    const maxMap = {S:480,M:600,L:720};
+    const px = maxMap[s];
+    canvas.width = px; canvas.height = px;
+    // redraw static layer
+    drawStatic();
+  }
+  placeBtns.center.onclick=()=>setPlacement('center');
+  placeBtns.left.onclick  =()=>setPlacement('left');
+  placeBtns.right.onclick =()=>setPlacement('right');
+  sizeBtns.S.onclick=()=>setSize('S');
+  sizeBtns.M.onclick=()=>setSize('M');
+  sizeBtns.L.onclick=()=>setSize('L');
+
+  // Game DOM
   const mobileCtrl = document.getElementById('mobileCtrl');
   const pad = document.getElementById('pad');
+  const edgeControls = document.getElementById('edgeControls');
+  const leftEdgeBtn = document.getElementById('turnLeftEdge');
+  const rightEdgeBtn= document.getElementById('turnRightEdge');
 
-  // ----- CONFIG -----
-  const W = canvas.width, H = canvas.height;
-  const GRID = 20;
-  const BASE_SPEED = 120;
-  const MAX_SPEED = 280;
-  const SPEED_PER_FOOD = 8;
-  const SEGMENT_SPACING = 10;
-  const HEAD_RADIUS = 7;
-  const BODY_RADIUS = 6;
-  const PATH_MAX = 4000;
-  const WALL_COUNT = 14;
-  const FOOD_RADIUS = 6;
-
-  // ----- STATE -----
-  let playing = false, paused = false, lastT = 0;
-  let score = 0, speed = BASE_SPEED, growth = 0, targetAngle = 0, angle = 0;
-  let wrapEdges = false, wallsOn = true;
-  let path = [];
-  let lengthDesired = 160;
-  let food = null;
-  let walls = [];
-
-  // ----- UI -----
-  const scoreEl = document.getElementById('score');
-  const lenEl   = document.getElementById('len');
-  const spdEl   = document.getElementById('speed');
   const overlay = document.getElementById('overlay');
   const startBtn= document.getElementById('startBtn');
   const howBtn  = document.getElementById('howBtn');
   const pauseBtn= document.getElementById('pauseBtn');
+  const pauseMini= document.getElementById('pauseMini');
+
   const wallsToggle = document.getElementById('wallsToggle');
   const wrapToggle  = document.getElementById('wrapToggle');
+  const dpadToggle  = document.getElementById('dpadToggle');
 
-  wallsToggle.addEventListener('change', () => { wallsOn = wallsToggle.checked; drawStatic(); });
-  wrapToggle.addEventListener('change', () => { wrapEdges = wrapToggle.checked; });
+  const scoreEl = document.getElementById('score');
+  const lenEl   = document.getElementById('len');
+  const spdEl   = document.getElementById('speed');
+
+  // Config
+  let W = canvas.width, H = canvas.height;
+  const GRID=20, BASE_SPEED=120, MAX_SPEED=280, SPEED_PER_FOOD=8;
+  const SEGMENT_SPACING=10, HEAD_RADIUS=7, BODY_RADIUS=6, PATH_MAX=4000, WALL_COUNT=14, FOOD_RADIUS=6;
+
+  // State
+  let playing=false, paused=false, lastT=0;
+  let score=0, speed=BASE_SPEED, targetAngle=0, angle=0;
+  let wrapEdges=false, wallsOn=true, useEdgeButtons=true;
+  let path=[], lengthDesired=160, food=null, walls=[];
 
   // Helpers
-  const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
-  function dist(a,b){const dx=a.x-b.x, dy=a.y-b.y; return Math.hypot(dx,dy);}
-  function point(x,y){return {x,y};}
-  function randomCell() {
+  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+  const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+  const P=(x,y)=>({x,y});
+  const rndCell=()=> {
     const gx = Math.floor(Math.random()*(W/GRID-2))+1;
     const gy = Math.floor(Math.random()*(H/GRID-2))+1;
-    return point(gx*GRID + GRID/2, gy*GRID + GRID/2);
-  }
+    return P(gx*GRID + GRID/2, gy*GRID + GRID/2);
+  };
   function spawnFood(){
-    let p;
-    do { p = randomCell(); } while (walls.some(w => p.x>w.x-10 && p.x<w.x+w.w+10 && p.y>w.y-10 && p.y<w.y+w.h+10));
-    food = p;
+    let p; do { p=rndCell(); }
+    while (walls.some(w => p.x>w.x-10 && p.x<w.x+w.w+10 && p.y>w.y-10 && p.y<w.y+w.h+10));
+    food=p;
   }
   function spawnWalls(){
-    walls = [];
-    for (let i=0;i<WALL_COUNT;i++){
-      const w = (Math.random()<0.5? GRID*2: GRID*3);
-      const h = (Math.random()<0.5? GRID*2: GRID*3);
-      const x = Math.floor(Math.random()*((W-w)/GRID))*GRID + 0.5;
-      const y = Math.floor(Math.random()*((H-h)/GRID))*GRID + 0.5;
+    walls=[];
+    for(let i=0;i<WALL_COUNT;i++){
+      const w=(Math.random()<0.5? GRID*2: GRID*3);
+      const h=(Math.random()<0.5? GRID*2: GRID*3);
+      const x=Math.floor(Math.random()*((W-w)/GRID))*GRID+0.5;
+      const y=Math.floor(Math.random()*((H-h)/GRID))*GRID+0.5;
       walls.push({x,y,w,h});
     }
   }
+
   function init(){
-    score = 0; speed = BASE_SPEED; growth = 0; lengthDesired = 160; targetAngle = angle = 0;
-    path = []; const start = point(W*0.5, H*0.6); path.unshift({...start});
+    // Update W/H in case size changed
+    W = canvas.width; H = canvas.height;
+    score=0; speed=BASE_SPEED; lengthDesired=160; targetAngle=angle=0;
+    path=[]; path.unshift(P(W*0.5,H*0.6));
     spawnFood(); spawnWalls(); updateHUD(); drawStatic();
   }
   function updateHUD(){
-    scoreEl.textContent = score;
-    lenEl.textContent = Math.round(lengthDesired);
-    spdEl.textContent = (speed/BASE_SPEED).toFixed(2)+'x';
+    scoreEl.textContent=score;
+    lenEl.textContent=Math.round(lengthDesired);
+    spdEl.textContent=(speed/BASE_SPEED).toFixed(2)+'x';
   }
 
-  // Keyboard
-  window.addEventListener('keydown', (e)=>{
+  // Drawing base (grid + walls)
+  function drawStatic(){
+    ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle='rgba(255,255,255,0.05)';
+    ctx.lineWidth=1;
+    for(let x=0;x<=W;x+=GRID){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for(let y=0;y<=H;y+=GRID){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+    if(wallsOn){
+      for(const w of walls){
+        ctx.fillStyle='rgba(255,200,87,0.12)'; ctx.strokeStyle='#ffc85766'; ctx.lineWidth=2;
+        roundRect(ctx,w.x,w.y,w.w,w.h,8,true,true);
+      }
+    }
+  }
+  function roundRect(ctx,x,y,w,h,r,fill,stroke){
+    const rr=Math.min(r,w/2,h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+rr,y); ctx.arcTo(x+w,y,x+w,y+h,rr); ctx.arcTo(x+w,y+h,x,y+h,rr);
+    ctx.arcTo(x,y+h,x,y,rr); ctx.arcTo(x,y,x+w,y,rr);
+    if(fill)ctx.fill(); if(stroke)ctx.stroke();
+  }
+
+  // Render snake + food
+  function render(tPulse){
+    drawStatic();
+    // Food
+    if(food){
+      const pul=0.6+0.4*Math.sin(tPulse*4);
+      ctx.shadowColor='#ff6ec4'; ctx.shadowBlur=18*pul;
+      ctx.fillStyle='#ff6ec4'; ctx.beginPath(); ctx.arc(food.x,food.y,FOOD_RADIUS,0,Math.PI*2); ctx.fill();
+      ctx.shadowBlur=0;
+    }
+    // Body samples
+    const samples=[path[0]];
+    let acc=0, idx=0;
+    while(idx<path.length-1 && acc<lengthDesired){
+      const a=path[idx], b=path[idx+1];
+      const seg=Math.hypot(a.x-b.x,a.y-b.y);
+      if(acc+seg>SEGMENT_SPACING*(samples.length)){
+        const need=SEGMENT_SPACING*(samples.length)-acc;
+        const t=clamp(need/seg,0,1);
+        samples.push({x:a.x+(b.x-a.x)*t, y:a.y+(b.y-a.y)*t});
+      }else{ idx++; acc+=seg; }
+    }
+    // Draw body
+    for(let i=samples.length-1;i>=1;i--){
+      const t=i/(samples.length-1), r=BODY_RADIUS*(0.85+0.15*Math.sin(t*Math.PI));
+      ctx.fillStyle=`rgba(116,255,180,${0.25+0.75*(1-t)})`;
+      ctx.beginPath(); ctx.arc(samples[i].x,samples[i].y,r+2,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#74ffb4';
+      ctx.beginPath(); ctx.arc(samples[i].x,samples[i].y,r,0,Math.PI*2); ctx.fill();
+    }
+    // Head
+    const h=samples[0];
+    ctx.shadowColor='#d9ff7a'; ctx.shadowBlur=22;
+    ctx.fillStyle='#d9ff7a'; ctx.beginPath(); ctx.arc(h.x,h.y,HEAD_RADIUS,0,Math.PI*2); ctx.fill();
+    ctx.shadowBlur=0;
+    // Eyes
+    const eo=4, ex=Math.cos(angle)*eo, ey=Math.sin(angle)*eo;
+    ctx.fillStyle='#0b0c19';
+    ctx.beginPath(); ctx.arc(h.x+ex-ey*0.4, h.y+ey+ex*0.4, 1.6,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(h.x+ex+ey*0.4, h.y+ey-ex*0.4, 1.6,0,Math.PI*2); ctx.fill();
+  }
+
+  // Game loop
+  function tick(ts){
+    if(!playing||paused){ lastT=ts; requestAnimationFrame(tick); return; }
+    if(!lastT) lastT=ts; const dt=(ts-lastT)/1000; lastT=ts;
+    // Steer
+    const diff=((targetAngle-angle+Math.PI*3)%(Math.PI*2))-Math.PI;
+    angle += clamp(diff, -4*dt, 4*dt);
+    // Move
+    const head={...path[0]};
+    head.x += Math.cos(angle)*speed*dt;
+    head.y += Math.sin(angle)*speed*dt;
+    // Edges
+    if(wrapEdges){
+      if(head.x<0) head.x+=W; if(head.x>W) head.x-=W;
+      if(head.y<0) head.y+=H; if(head.y>H) head.y-=H;
+    }else{
+      if(head.x<0||head.x>W||head.y<0||head.y>H) return gameOver();
+    }
+    // Walls
+    if(wallsOn){
+      for(const w of walls){
+        if(head.x>w.x && head.x<w.x+w.w && head.y>w.y && head.y<w.y+w.h) return gameOver();
+      }
+    }
+    // Path
+    path.unshift(head);
+    let total=0,i=0;
+    while(i<path.length-1){ total+=dist(path[i],path[i+1]); i++; if(total>lengthDesired+60) break; }
+    while(path.length>i+2) path.pop();
+    for(let j=8;j<path.length;j+=4){ if(dist(head,path[j])<BODY_RADIUS+2) return gameOver(); }
+    // Food
+    if(food && dist(head,food)<HEAD_RADIUS+FOOD_RADIUS){
+      score++; lengthDesired+=28; speed=Math.min(MAX_SPEED, speed+SPEED_PER_FOOD);
+      spawnFood(); updateHUD();
+    }
+    render(ts/1000);
+    requestAnimationFrame(tick);
+  }
+
+  // Input: keyboard
+  window.addEventListener('keydown', e=>{
     if(!playing) return;
-    const k = e.key.toLowerCase();
-    if (k==='arrowleft'||k==='a')  targetAngle -= Math.PI/2;
-    if (k==='arrowright'||k==='d') targetAngle += Math.PI/2;
-    if (k==='arrowdown'||k==='s')  targetAngle += Math.PI; // flip
+    const k=e.key.toLowerCase();
+    if(k==='arrowleft'||k==='a')  targetAngle-=Math.PI/2;
+    if(k==='arrowright'||k==='d') targetAngle+=Math.PI/2;
+    if(k==='arrowdown'||k==='s')  targetAngle+=Math.PI; // flip
   });
 
-  // Swipe (pad is only visible while playing; won’t block overlay)
+  // Edge buttons (fixed left/right)
+  const turnLeft = ()=>{ if(playing && !paused) targetAngle -= Math.PI/2; };
+  const turnRight= ()=>{ if(playing && !paused) targetAngle += Math.PI/2; };
+  leftEdgeBtn.addEventListener('click', turnLeft);
+  rightEdgeBtn.addEventListener('click', turnRight);
+  // press & hold repeat
+  function pressRepeat(btn, fn){
+    let t=null; btn.addEventListener('pointerdown', ()=>{ fn(); t=setInterval(fn,180); });
+    ['pointerup','pointercancel','pointerleave'].forEach(ev=>btn.addEventListener(ev, ()=>{ clearInterval(t); t=null; }));
+  }
+  pressRepeat(leftEdgeBtn, turnLeft);
+  pressRepeat(rightEdgeBtn, turnRight);
+
+  // Swipe pad (disabled when edge buttons are chosen)
   (()=> {
     let dragging=false, sx=0, sy=0;
     function onStart(x,y){ dragging=true; sx=x; sy=y; }
@@ -217,207 +442,93 @@
       }
     }
     function onEnd(){ dragging=false; }
-    pad.addEventListener('pointerdown',e=>{ if(!playing||paused) return; pad.setPointerCapture(e.pointerId); onStart(e.clientX,e.clientY);});
-    pad.addEventListener('pointermove', e=>{ if(!playing||paused) return; onMove(e.clientX,e.clientY);});
-    pad.addEventListener('pointerup',   onEnd);
-    pad.addEventListener('pointercancel',onEnd);
+    pad.addEventListener('pointerdown', e=>{ if(!playing||paused||useEdgeButtons) return; pad.setPointerCapture(e.pointerId); onStart(e.clientX,e.clientY);});
+    pad.addEventListener('pointermove', e=>{ if(!playing||paused||useEdgeButtons) return; onMove(e.clientX,e.clientY);});
+    pad.addEventListener('pointerup', onEnd);
+    pad.addEventListener('pointercancel', onEnd);
   })();
 
-  // Layered draws
-  function drawStatic(){
-    ctx.clearRect(0,0,W,H);
-    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-    ctx.lineWidth = 1;
-    for(let x=0;x<=W;x+=GRID){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-    for(let y=0;y<=H;y+=GRID){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
-    if(wallsOn){
-      for(const w of walls){
-        ctx.fillStyle = 'rgba(255,200,87,0.12)';
-        ctx.strokeStyle = '#ffc85766';
-        ctx.lineWidth = 2;
-        roundRect(ctx,w.x,w.y,w.w,w.h,8,true,true);
-      }
-    }
-  }
-  function roundRect(ctx,x,y,w,h,r, fill, stroke){
-    const rr = Math.min(r, w/2, h/2);
-    ctx.beginPath();
-    ctx.moveTo(x+rr,y);
-    ctx.arcTo(x+w,y,x+w,y+h,rr);
-    ctx.arcTo(x+w,y+h,x,y+h,rr);
-    ctx.arcTo(x,y+h,x,y,rr);
-    ctx.arcTo(x,y,x+w,y,rr);
-    if (fill) ctx.fill();
-    if (stroke) ctx.stroke();
-  }
+  // Visibility helpers
+  function showSwipePad(show){ mobileCtrl.classList.toggle('show', show); }
+  function showEdgeButtons(show){ edgeControls.classList.toggle('show', show); }
 
-  function render(foodPulse){
-    drawStatic();
-    // Food
-    if (food){
-      const pul = 0.6 + 0.4*Math.sin(foodPulse*4);
-      ctx.shadowColor = '#ff6ec4';
-      ctx.shadowBlur = 18*pul;
-      ctx.fillStyle = '#ff6ec4';
-      ctx.beginPath(); ctx.arc(food.x, food.y, 6, 0, Math.PI*2); ctx.fill();
-      ctx.shadowBlur = 0;
-    }
-    // Build samples along path
-    const samples = [];
-    let acc = 0, idx = 0;
-    samples.push(path[0]);
-    while (idx < path.length-1 && acc < lengthDesired){
-      const a = path[idx], b = path[idx+1];
-      const segLen = dist(a,b);
-      if (acc + segLen > SEGMENT_SPACING * (samples.length)){
-        const need = SEGMENT_SPACING * (samples.length) - acc;
-        const t = Math.max(0, Math.min(1, need / segLen));
-        samples.push({ x: a.x + (b.x-a.x)*t, y: a.y + (b.y-a.y)*t });
-      }else{
-        idx++; acc += segLen;
-      }
-    }
-    // Body
-    for (let i=samples.length-1;i>=1;i--){
-      const t = i/(samples.length-1);
-      const r = BODY_RADIUS * (0.85 + 0.15*Math.sin(t*Math.PI));
-      ctx.fillStyle = `rgba(116,255,180,${0.25+0.75*(1-t)})`;
-      ctx.beginPath(); ctx.arc(samples[i].x, samples[i].y, r+2, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = '#74ffb4';
-      ctx.beginPath(); ctx.arc(samples[i].x, samples[i].y, r, 0, Math.PI*2); ctx.fill();
-    }
-    // Head
-    const h = samples[0];
-    ctx.shadowColor = '#d9ff7a'; ctx.shadowBlur = 22;
-    ctx.fillStyle = '#d9ff7a';
-    ctx.beginPath(); ctx.arc(h.x, h.y, HEAD_RADIUS, 0, Math.PI*2); ctx.fill();
-    ctx.shadowBlur = 0;
-    // Eyes
-    const eyeOff = 4;
-    const ex = Math.cos(angle) * eyeOff, ey = Math.sin(angle) * eyeOff;
-    ctx.fillStyle = '#0b0c19';
-    ctx.beginPath(); ctx.arc(h.x + ex - ey*0.4, h.y + ey + ex*0.4, 1.6, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(h.x + ex + ey*0.4, h.y + ey - ex*0.4, 1.6, 0, Math.PI*2); ctx.fill();
-  }
-
-  // Loop
-  function tick(ts){
-    if (!playing || paused){ lastT = ts; requestAnimationFrame(tick); return; }
-    if (!lastT) lastT = ts;
-    const dt = (ts - lastT) / 1000;
-    lastT = ts;
-    // Steer
-    const diff = ((targetAngle - angle + Math.PI*3) % (Math.PI*2)) - Math.PI;
-    angle += Math.max(-4*dt, Math.min(4*dt, diff));
-    // Move
-    const head = {...path[0]};
-    head.x += Math.cos(angle) * speed * dt;
-    head.y += Math.sin(angle) * speed * dt;
-    // Edges
-    if (wrapEdges){
-      if (head.x<0) head.x+=W; if (head.x>W) head.x-=W;
-      if (head.y<0) head.y+=H; if (head.y>H) head.y-=H;
-    }else{
-      if (head.x<0||head.x>W||head.y<0||head.y>H) return gameOver();
-    }
-    // Walls
-    if (wallsOn){
-      for(const w of walls){
-        if (head.x>w.x && head.x<w.x+w.w && head.y>w.y && head.y<w.y+w.h){
-          return gameOver();
-        }
-      }
-    }
-    // Path
-    path.unshift(head);
-    let total = 0, i=0;
-    while (i < path.length-1){
-      total += dist(path[i], path[i+1]);
-      i++;
-      if (total > lengthDesired + 60) break;
-    }
-    while (path.length > i+2) path.pop();
-    for (let j=8; j<path.length; j+=4){
-      if (dist(head, path[j]) < BODY_RADIUS+2) return gameOver();
-    }
-    // Food
-    if (food && dist(head, food) < HEAD_RADIUS + FOOD_RADIUS){
-      score++; lengthDesired += 28; speed = Math.min(MAX_SPEED, speed + SPEED_PER_FOOD);
-      spawnFood(); updateHUD();
-    }
-    render(ts/1000);
-    requestAnimationFrame(tick);
-  }
-
-  // Control
-  function showPad(show){
-    if (show) mobileCtrl.classList.add('show');
-    else      mobileCtrl.classList.remove('show');
-  }
+  // Controls
   function start(){
-    playing = true; paused = false; lastT = 0;
+    playing=true; paused=false; lastT=0;
     overlay.style.display='none';
-    showPad(true);         // <-- only visible during play
     init();
+    // decide control scheme
+    useEdgeButtons = dpadToggle.checked;
+    showEdgeButtons(useEdgeButtons);
+    showSwipePad(!useEdgeButtons);
     requestAnimationFrame(tick);
   }
   function pauseToggle(){
-    if (!playing) return;
-    paused = !paused;
-    pauseBtn.textContent = paused ? 'Resume' : 'Pause';
-    // While paused, prevent accidental swipes
-    showPad(!paused);
+    if(!playing) return;
+    paused=!paused;
+    pauseBtn.textContent = paused? 'Resume':'Pause';
+    pauseMini.textContent= paused? 'Resume':'Pause';
+    showEdgeButtons(!paused && useEdgeButtons);
+    showSwipePad(!paused && !useEdgeButtons);
   }
   function gameOver(){
-    playing = false;
-    showPad(false);        // <-- hide so overlay is fully tappable
+    playing=false;
+    showEdgeButtons(false); showSwipePad(false);
     overlay.style.display='flex';
-    overlay.innerHTML = `
+    overlay.innerHTML=`
       <h1>Game Over</h1>
       <p class="hint">Score: <b>${score}</b> · Max Speed: <b>${(speed/BASE_SPEED).toFixed(2)}x</b></p>
       <div class="toggles" style="margin-top:8px">
-        <label class="switch">
-          <input id="wallsToggle2" type="checkbox" ${wallsOn?'checked':''}>
-          <span>Walls ON</span>
-        </label>
-        <label class="switch">
-          <input id="wrapToggle2" type="checkbox" ${wrapEdges?'checked':''}>
-          <span>Wrap at edges</span>
-        </label>
+        <label class="switch"><input id="wallsToggle2" type="checkbox" ${wallsOn?'checked':''}><span>Walls ON</span></label>
+        <label class="switch"><input id="wrapToggle2" type="checkbox" ${wrapEdges?'checked':''}><span>Wrap at edges</span></label>
+        <label class="switch"><input id="dpadToggle2" type="checkbox" ${useEdgeButtons?'checked':''}><span>Use edge buttons (disable swipe)</span></label>
       </div>
       <div style="display:flex; gap:10px; margin-top:16px">
         <button id="restartBtn" class="btn">PLAY AGAIN</button>
         <button id="howBtn2" class="btn secondary">HOW TO PLAY</button>
-      </div>
-    `;
+      </div>`;
     overlay.querySelector('#restartBtn').onclick = start;
-    overlay.querySelector('#howBtn2').onclick = showHow;
-    overlay.querySelector('#wallsToggle2').onchange = (e)=>{wallsOn=e.target.checked;};
-    overlay.querySelector('#wrapToggle2').onchange  = (e)=>{wrapEdges=e.target.checked;};
+    overlay.querySelector('#howBtn2').onclick   = showHow;
+    overlay.querySelector('#wallsToggle2').onchange = e=>{wallsOn=e.target.checked; drawStatic();};
+    overlay.querySelector('#wrapToggle2').onchange  = e=>{wrapEdges=e.target.checked;};
+    overlay.querySelector('#dpadToggle2').onchange  = e=>{useEdgeButtons=e.target.checked;};
   }
   function showHow(){
-    overlay.innerHTML = `
+    overlay.innerHTML=`
       <h1>How to Play</h1>
       <p class="hint" style="max-width:520px">
-        Steer with <b>Arrow keys / WASD</b> or <b>swipe</b> on the round pad at the bottom.<br/>
-        Eat the glowing orb to grow and speed up. Avoid walls (toggleable) and your own body.
+        Eat the glowing orb to grow and speed up. Avoid walls (toggleable) and your own body.<br/><br/>
+        <b>Controls</b><br/>
+        • Edge buttons (default): ⟲ / ⟳ at screen edges.<br/>
+        • Swipe pad: enable by unchecking “Use edge buttons”.<br/>
+        • Keyboard: Arrow keys / WASD.
       </p>
+      <div class="toggles" style="margin-top:8px">
+        <label class="switch"><input id="dpadToggleHow" type="checkbox" ${useEdgeButtons?'checked':''}><span>Use edge buttons (disable swipe)</span></label>
+      </div>
       <div style="display:flex; gap:10px; margin-top:16px">
         <button id="startBtn2" class="btn">START</button>
         <button id="backBtn" class="btn secondary">Back</button>
       </div>`;
-    overlay.querySelector('#startBtn2').onclick = start;
-    overlay.querySelector('#backBtn').onclick = () => {
-      overlay.style.display='none';
-    };
+    const t=overlay.querySelector('#dpadToggleHow');
+    t.onchange=()=> useEdgeButtons = t.checked;
+    overlay.querySelector('#startBtn2').onclick=start;
+    overlay.querySelector('#backBtn').onclick = ()=>{ overlay.style.display='none'; };
   }
 
-  // Buttons
-  document.getElementById('startBtn').onclick = start;
-  document.getElementById('howBtn').onclick = showHow;
-  document.getElementById('pauseBtn').onclick = pauseToggle;
+  // Buttons bind
+  startBtn.onclick = start;
+  howBtn.onclick   = showHow;
+  pauseBtn.onclick = pauseToggle;
+  pauseMini.onclick= pauseToggle;
 
-  // First paint
+  // Toggles bind
+  wallsToggle.onchange=()=>{ wallsOn=wallsToggle.checked; drawStatic(); };
+  wrapToggle.onchange =()=>{ wrapEdges=wrapToggle.checked; };
+  dpadToggle.onchange =()=>{ /* preview only; applied on start */ };
+
+  // Initial paint
+  setPlacement('center'); setSize('L'); // defaults
   init(); render(0);
 })();
 </script>
